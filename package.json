@@ -15,7 +15,8 @@
     "db:verify": "bash scripts/verify-migrations.sh",
     "db:ranks": "node scripts/generate-ranks-sql.mjs > supabase/migrations/20261117000005_reference_ranks.sql",
     "verify": "npm run check:core-sync && npm run typecheck && npm test && npm run lint && npm run db:verify",
-    "mobile": "npm run start --workspace apps/mobile"
+    "mobile": "npm run start --workspace apps/mobile",
+    "build:web": "npm run build:web --workspace apps/mobile"
   },
   "engines": {
     "node": ">=20"

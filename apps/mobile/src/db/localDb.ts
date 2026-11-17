@@ -60,7 +60,7 @@ export async function saveDetectorState(s: DetectionState): Promise<void> {
   await getDb().runAsync('insert into detector (id, state) values (1, ?) on conflict (id) do update set state = excluded.state', JSON.stringify(s));
 }
 
-export interface ActiveTrip { clientTripId: string; startedAt: number; manual: boolean; carId: string | null; isDemo: boolean }
+export type { ActiveTrip } from './types';
 
 export async function getActiveTrip(): Promise<ActiveTrip | null> {
   const r = await getDb().getFirstAsync<{ client_trip_id: string; started_at: number; manual: number; car_id: string | null; is_demo: number }>(
@@ -109,39 +109,8 @@ export async function deleteTripPoints(tripId: string): Promise<void> {
 
 /* ---------------- trips ---------------- */
 
-export type SyncStatus = 'pending' | 'synced' | 'failed' | 'local_only';
-
-export interface LocalTrip {
-  clientTripId: string;
-  serverId: string | null;
-  startedAt: number;
-  endedAt: number;
-  distanceM: number;
-  durationS: number;
-  movingTimeS: number;
-  elevationGainM: number;
-  /** encoded polyline (precision 6) of the simplified route */
-  route: string;
-  routeHexes: string[];
-  xpTotal: number;
-  xpLines: XpLine[];
-  xpWithheld: string | null;
-  xpConfirmed: boolean;
-  creditedKm: number;
-  newHexes: number;
-  verdict: 'ok' | 'flagged' | 'rejected';
-  flags: string[];
-  mode: string;
-  isPassenger: boolean;
-  manual: boolean;
-  carId: string | null;
-  syncStatus: SyncStatus;
-  attempts: number;
-  nextAttemptAt: number;
-  lastError: string | null;
-  isDemo: boolean;
-  createdAt: number;
-}
+export type { SyncStatus, LocalTrip } from './types';
+import type { LocalTrip, SyncStatus, ActiveTrip, LocalProgress } from './types';
 
 type TripRow = {
   client_trip_id: string; server_id: string | null; started_at: number; ended_at: number; distance_m: number; duration_s: number;
@@ -244,7 +213,7 @@ export async function kmCreditedBetween(fromMs: number, toMs: number): Promise<n
   return r?.km ?? 0;
 }
 
-export interface LocalProgress { totalXp: number; pendingXp: number; distanceM: number; trips: number; hexes: number }
+export type { LocalProgress } from './types';
 
 export async function localProgress(): Promise<LocalProgress> {
   const d = getDb();

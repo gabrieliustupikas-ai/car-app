@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { DarkTheme, DefaultTheme, router, SplashScreen, Stack, ThemeProvider, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LevelUpOverlay } from '@/components/LevelUpOverlay';
@@ -25,9 +25,11 @@ import { useTheme } from '@/theme/useTheme';
 void SplashScreen.preventAutoHideAsync();
 telemetry.init();
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
-});
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
+  });
+}
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   useEffect(() => { telemetry.captureException(error, { scope: 'root' }); }, [error]);
@@ -68,6 +70,7 @@ function useBootstrap() {
 
   // open the trip summary when a "trip saved" notification is tapped
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     const sub = Notifications.addNotificationResponseReceivedListener((r) => {
       const url = r.notification.request.content.data?.url;
       if (typeof url === 'string' && url.startsWith('/trip/')) router.push(url as never);

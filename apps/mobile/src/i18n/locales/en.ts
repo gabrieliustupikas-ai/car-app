@@ -47,6 +47,7 @@ const en = {
     invalidEmail: 'Enter a valid email address',
     codeSent: 'Code sent to {{email}}',
     noBackend: 'Server not configured — demo mode only.',
+    webPreview: 'This is the browser preview. It runs in demo mode with simulated drives. Install the phone app for real GPS tracking and sign-in.',
   },
   map: {
     autoDetect: 'Auto-detect',

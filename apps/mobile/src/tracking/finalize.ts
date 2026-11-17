@@ -2,6 +2,7 @@ import {
   encodePolyline, levelForXp, levelsGained, localDayStart, processTrip, type GeoPoint, type ProcessedTrip, type TripContext,
 } from '@roadclub/core';
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import i18n from '@/i18n';
 import * as local from '@/db/localDb';
 import { deviceTimezone, formatKm } from '@/lib/format';
@@ -85,6 +86,7 @@ export async function finalizeTrip(
 }
 
 async function notifyTripSaved(trip: local.LocalTrip, level: number) {
+  if (Platform.OS === 'web') return;
   try {
     const perm = await Notifications.getPermissionsAsync();
     if (!perm.granted) return;

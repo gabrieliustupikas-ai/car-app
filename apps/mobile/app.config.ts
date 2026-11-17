@@ -13,7 +13,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: BRAND.slug,
   scheme: BRAND.scheme,
   version: '0.1.0',
-  platforms: ['ios', 'android'],
+  platforms: ['ios', 'android', 'web'],
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
@@ -46,6 +46,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     blockedPermissions: ['android.permission.RECORD_AUDIO'], // re-enabled in Phase 4 (radio)
   },
+  // Web = browser preview of demo mode (Vercel). The real product is the iOS/Android app.
+  web: { output: 'single', bundler: 'metro', favicon: './assets/favicon.png', name: `${BRAND.name} — demo preview`, themeColor: '#07090C', backgroundColor: '#07090C' },
   plugins: [
     'expo-router',
     ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 200, resizeMode: 'contain', backgroundColor: '#07090C' }],

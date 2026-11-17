@@ -34,7 +34,8 @@ export function generateTrip(route: DemoRoute, opts: GenerateOptions): GeoPoint[
   const pts: GeoPoint[] = [];
   let t = opts.startAt;
   const jitter = (m: number) => (rand() - 0.5) * 2 * m;
-  const altAt = (lat: number, lng: number) => 120 + 25 * Math.sin(lat * 400) + 15 * Math.cos(lng * 300);
+  // gentle Baltic terrain: long, low hills (a few tens of metres over ~10 km)
+  const altAt = (lat: number, lng: number) => 120 + 18 * Math.sin(lat * 60) + 12 * Math.cos(lng * 35);
   const push = (lat: number, lng: number, speed: number) => {
     const n = { lat: lat + jitter(3) / 111_320, lng: lng + jitter(3) / 70_000 };
     pts.push({ lat: n.lat, lng: n.lng, t, alt: altAt(lat, lng) + jitter(2), acc: Math.round(4 + rand() * 6), speed: Math.max(0, speed + jitter(0.4)) });

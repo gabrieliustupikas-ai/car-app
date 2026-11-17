@@ -25,3 +25,4 @@ apps/mobile/android
 # supabase local
 supabase/.branches
 supabase/.temp
+apps/mobile/dist/

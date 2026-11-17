@@ -6,7 +6,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Screen } from '@/components/ui/Screen';
-import { hasBackend } from '@/config/env';
+import { hasBackend, isWebPreview } from '@/config/env';
 import { seedDemoHistory } from '@/demo/demoMode';
 import { supabase } from '@/lib/supabase';
 import { telemetry } from '@/lib/telemetry';
@@ -62,7 +62,9 @@ export default function SignIn() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Screen title={t('auth.title')}>
         <AppText color="textMuted">{t('auth.subtitle')}</AppText>
-        {hasBackend ? (
+        {isWebPreview ? (
+          <GlassCard><AppText>{t('auth.webPreview')}</AppText></GlassCard>
+        ) : hasBackend ? (
           <GlassCard>
             <View style={{ gap: space.md }}>
               {stage === 'email' ? (

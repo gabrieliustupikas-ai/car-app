@@ -49,6 +49,7 @@ const lt: Translation = {
     invalidEmail: 'Įvesk teisingą el. pašto adresą',
     codeSent: 'Kodas išsiųstas: {{email}}',
     noBackend: 'Serveris nesukonfigūruotas — tik demo režimas.',
+    webPreview: 'Tai naršyklės peržiūra. Ji veikia demo režimu su imituotomis kelionėmis. Tikram GPS sekimui ir prisijungimui įdiek programėlę telefone.',
   },
   map: {
     autoDetect: 'Automatinis aptikimas',

@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { z } from 'zod';
 
 const EnvSchema = z.object({
@@ -31,3 +32,6 @@ if (!parsed.success) {
 export const env = parsed.success ? parsed.data : { analyticsEnabled: false };
 export const hasBackend = Boolean(env.supabaseUrl && env.supabaseAnonKey);
 export const hasMapbox = Boolean(env.mapboxToken);
+
+/** Browser build: a demo-mode preview only (no background GPS, no account). */
+export const isWebPreview = Platform.OS === 'web';
