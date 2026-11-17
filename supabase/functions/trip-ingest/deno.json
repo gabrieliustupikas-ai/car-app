@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "h3-js": "npm:h3-js@4.4.0",
+    "zod": "npm:zod@4.6.7",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2"
+  }
+}

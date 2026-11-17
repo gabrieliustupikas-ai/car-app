@@ -1,5 +1,6 @@
 import { decodeTrack, TrackDecodeError } from './codec.ts';
 import { levelForXp } from './levels.ts';
+import { XP_RULES } from './xp.ts';
 import { localDayStart, processTrip, type ProcessedTrip, type TripContext } from './pipeline.ts';
 import { TripUploadSchema, type TripIngestResponse, type TripUpload } from './schemas.ts';
 
@@ -9,8 +10,11 @@ import { TripUploadSchema, type TripIngestResponse, type TripUpload } from './sc
  */
 export interface IngestStore extends TripContext {
   findTripByClientId(clientTripId: string): Promise<{ tripId: string; response: TripIngestResponse } | null>;
-  /** persist trip + chunks + hexes + xp events atomically; returns new trip id and the profile's new total XP */
-  saveTrip(upload: TripUpload, processed: ProcessedTrip): Promise<{ tripId: string; totalXp: number }>;
+  /**
+   * Persist trip + chunks + hexes + xp events atomically. Returns the new trip id, the profile's new total XP and,
+   * when the store re-counted inside its transaction, the authoritative trip XP / new-hex count.
+   */
+  saveTrip(upload: TripUpload, processed: ProcessedTrip): Promise<{ tripId: string; totalXp: number; xpTotal?: number; newHexes?: number }>;
 }
 
 export class IngestError extends Error {
@@ -44,7 +48,10 @@ export async function ingestTrip(body: unknown, store: IngestStore, now = Date.n
     now,
     dayStartMs: localDayStart(upload.startedAt, upload.timezone),
   });
-  const { tripId, totalXp } = await store.saveTrip(upload, processed);
+  const saved = await store.saveTrip(upload, processed);
+  const { tripId, totalXp } = saved;
+  const xpTotal = saved.xpTotal ?? processed.xp.total;
+  const newHexCount = saved.newHexes ?? processed.newHexes.length;
   return {
     tripId,
     duplicate: false,
@@ -57,10 +64,11 @@ export async function ingestTrip(body: unknown, store: IngestStore, now = Date.n
       movingTimeS: processed.stats.movingTimeS,
       elevationGainM: processed.stats.elevationGainM,
     },
-    newHexes: processed.newHexes.length,
+    newHexes: newHexCount,
     xp: {
-      total: processed.xp.total,
-      lines: processed.xp.lines,
+      total: xpTotal,
+      lines: processed.xp.lines.map((l) =>
+        l.source === 'new_hex' && saved.newHexes != null ? { ...l, amount: Math.min(saved.newHexes, XP_RULES.newHexPerTripCap) * XP_RULES.newHex } : l),
       ...(processed.xp.withheldReason ? { withheldReason: processed.xp.withheldReason } : {}),
     },
     profile: { totalXp, level: levelForXp(totalXp).level },
