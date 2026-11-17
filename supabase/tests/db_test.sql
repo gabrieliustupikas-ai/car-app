@@ -61,6 +61,7 @@ reset role;
 -- ---------- RLS ----------
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 select pg_temp.assert((select count(*) = 0 from trips), 'B cannot see A private trips');
+select pg_temp.assert((select count(*) = 0 from trips_api), 'trips_api respects RLS');
 select pg_temp.assert((select count(*) = 0 from trip_points), 'B cannot see A raw points');
 select pg_temp.assert((select count(*) = 0 from xp_events), 'B cannot see A xp');
 select pg_temp.assert((select count(*) = 1 from profiles), 'B sees only own profile (A is friends-only)');
@@ -73,6 +74,8 @@ reset role;
 
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 select pg_temp.assert((select count(*) = 1 from trips), 'A sees own trip');
+select pg_temp.assert((select route_geojson ->> 'type' = 'LineString' from trips_api), 'trips_api exposes GeoJSON route');
+update profiles set age_confirmed_at = now() where id = auth.uid();
 do $$ begin
   begin insert into trips (user_id, client_trip_id, started_at, ended_at, local_day, distance_m, duration_s, moving_time_s)
         values (auth.uid(), gen_random_uuid(), now(), now(), current_date, 1, 1, 1);

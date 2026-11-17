@@ -1,0 +1,28 @@
+name: CI
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run check:core-sync
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run lint
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL 16 + PostGIS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-16 postgresql-16-postgis-3
+      - run: bash scripts/verify-migrations.sh
