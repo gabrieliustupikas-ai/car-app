@@ -20,5 +20,9 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@mapbox/vector-tile": "^3.0.0",
+    "pbf": "^5.2.0"
   }
 }

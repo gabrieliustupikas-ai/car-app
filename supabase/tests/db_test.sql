@@ -65,6 +65,7 @@ select pg_temp.assert((select count(*) = 0 from trips_api), 'trips_api respects 
 select pg_temp.assert((select count(*) = 0 from trip_points), 'B cannot see A raw points');
 select pg_temp.assert((select count(*) = 0 from xp_events), 'B cannot see A xp');
 select pg_temp.assert((select count(*) = 1 from profiles), 'B sees only own profile (A is friends-only)');
+select pg_temp.assert((select count(*) >= 150 from pins where source = 'osm'), 'Klaipėda OSM pins seeded');
 select pg_temp.assert((select count(*) >= 20 from pins), 'approved pins visible');
 select pg_temp.assert((select count(*) = 0 from pins where status = 'pending'), 'pending pins hidden');
 -- recursion-prone policies evaluate cleanly

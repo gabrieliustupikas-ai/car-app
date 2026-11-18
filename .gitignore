@@ -26,3 +26,4 @@ apps/mobile/android
 supabase/.branches
 supabase/.temp
 apps/mobile/dist/
+apps/mobile/public/maplibre-gl-worker.mjs

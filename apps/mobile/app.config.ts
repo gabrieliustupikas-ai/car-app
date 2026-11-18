@@ -17,7 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
-  backgroundColor: '#07090C',
+  backgroundColor: '#050506',
   ios: {
     bundleIdentifier: BRAND.iosBundleId,
     supportsTablet: false,
@@ -30,7 +30,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: BRAND.androidPackage,
     adaptiveIcon: {
-      backgroundColor: '#07090C',
+      backgroundColor: '#050506',
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',
@@ -47,10 +47,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     blockedPermissions: ['android.permission.RECORD_AUDIO'], // re-enabled in Phase 4 (radio)
   },
   // Web = browser preview of demo mode (Vercel). The real product is the iOS/Android app.
-  web: { output: 'single', bundler: 'metro', favicon: './assets/favicon.png', name: `${BRAND.name} — demo preview`, themeColor: '#07090C', backgroundColor: '#07090C' },
+  web: { output: 'single', bundler: 'metro', favicon: './assets/favicon.png', name: `${BRAND.name} — demo preview`, themeColor: '#050506', backgroundColor: '#050506' },
   plugins: [
     'expo-router',
-    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 200, resizeMode: 'contain', backgroundColor: '#07090C' }],
+    ['expo-splash-screen', { image: './assets/splash-icon.png', imageWidth: 200, resizeMode: 'contain', backgroundColor: '#050506' }],
     'expo-sqlite',
     'expo-secure-store',
     'expo-localization',
@@ -67,7 +67,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         isAndroidMotionActivityEnabled: true,
       },
     ],
-    ['expo-notifications', { color: '#00E5FF' }],
+    ['expo-notifications', { color: '#E10600' }],
     ['@rnmapbox/maps', { RNMapboxMapsImpl: 'mapbox' }],
     ['expo-build-properties', { android: { minSdkVersion: 26 }, ios: { deploymentTarget: '16.4' } }],
   ],

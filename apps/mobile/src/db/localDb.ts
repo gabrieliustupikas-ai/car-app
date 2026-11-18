@@ -4,6 +4,7 @@
  */
 import * as SQLite from 'expo-sqlite';
 import type { DetectionState, GeoPoint, XpLine } from '@roadclub/core';
+import type { ActiveTrip, LocalProgress, LocalTrip, SyncStatus } from './types';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -110,7 +111,6 @@ export async function deleteTripPoints(tripId: string): Promise<void> {
 /* ---------------- trips ---------------- */
 
 export type { SyncStatus, LocalTrip } from './types';
-import type { LocalTrip, SyncStatus, ActiveTrip, LocalProgress } from './types';
 
 type TripRow = {
   client_trip_id: string; server_id: string | null; started_at: number; ended_at: number; distance_m: number; duration_s: number;

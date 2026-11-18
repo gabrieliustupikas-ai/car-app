@@ -13,4 +13,6 @@ export * from './schemas.ts';
 export * from './pipeline.ts';
 export * from './demo/routes.ts';
 export * from './demo/generator.ts';
+export * from './demo/klaipeda.ts';
+export * from './demo/liveDrivers.ts';
 export * from './ingest.ts';

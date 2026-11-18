@@ -118,6 +118,24 @@ Without Docker, verify the SQL against plain Postgres 16 + PostGIS (this is what
 npm run db:verify
 ```
 
+## Klaipėda demo city
+
+Demo mode is centred on **Klaipėda**, built from real OpenStreetMap data (© OpenStreetMap contributors, ODbL):
+- **Roads:** 17k road points turned into a routable graph. One-way streets are respected and T-junctions are connected.
+- **8 demo drivers** (fictional profiles, clearly labelled "Demo profile") loop along real streets: Senamiestis, Akropolis, Melnragė, Giruliai, Karklė, the New Ferry and more.
+- **6 demo trips** follow real routes, for example Old Town → Giruliai and Akropolis → Olando kepurė.
+- **154 real places:** viewpoints, fuel, EV charging, malls as meet spots, ferries, the castle, museums and street sculptures. They are also seeded into the database (`supabase/seed_klaipeda.sql`).
+
+To regenerate after OpenStreetMap updates (map tiles from OpenFreeMap, no API key):
+
+```bash
+NODE_USE_ENV_PROXY=1 node scripts/klaipeda/fetch-tiles.mjs && node scripts/klaipeda/build-klaipeda.mjs
+```
+
+**Web map:** MapLibre with an Apple-Maps-style dark/light theme (`apps/mobile/src/components/map/mapStyle.ts`) and 3D buildings. **Phone map:** Mapbox Standard in its monochrome night theme.
+
+**Radio:** a push-to-talk walkie-talkie. Hold the button, or hold Space on the web. It has 1/2/5/10 km Nearby channels plus Friends and Club, listen-only mode, music ducking, and mute/report per driver. Each transmission is cut off at 30 s. In demo mode, Klaipėda drivers talk on the channel and reply to you. Phase 4 swaps the demo transport for LiveKit.
+
 ## How a trip flows
 
 1. **Detect.** `expo-location` delivers fixes to a headless background task. In idle mode it uses coarse sampling plus a departure geofence; in driving mode it uses 2 s high-accuracy fixes, and a saver profile on low battery. `core/tripDetection` is a serialisable reducer: a start needs ≥3 fast fixes (≥16 km/h) and ≥120 m of displacement; a trip ends after 3 min stationary or a 15 min gap. Traffic lights are ignored. A long jam is merged back into one trip.

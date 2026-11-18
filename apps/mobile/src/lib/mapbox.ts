@@ -13,6 +13,5 @@ export const MAP_STYLE = {
   usesStandard: (scheme: 'dark' | 'light') => !(scheme === 'dark' ? env.mapboxStyleDark : env.mapboxStyleLight),
 };
 
-export const LITHUANIA_CENTER: [number, number] = [23.9, 55.2];
 
 export { Mapbox };

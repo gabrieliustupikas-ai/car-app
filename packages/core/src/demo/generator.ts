@@ -44,21 +44,45 @@ export function generateTrip(route: DemoRoute, opts: GenerateOptions): GeoPoint[
   const [lat0, lng0] = route.waypoints[0]!;
   for (let s = 0; s < idle; s += dt) push(lat0, lng0, 0);
 
-  for (let w = 1; w < route.waypoints.length; w++) {
-    const a = { lat: route.waypoints[w - 1]![0], lng: route.waypoints[w - 1]![1] };
-    const b = { lat: route.waypoints[w]![0], lng: route.waypoints[w]![1] };
-    const legM = haversine(a, b);
-    let pos = 0;
-    let v = w === 1 ? 0 : route.cruiseMs * 0.6;
-    while (pos < legM) {
-      const remaining = legM - pos;
-      const target = remaining < 250 ? route.cruiseMs * 0.45 : route.cruiseMs * (0.9 + rand() * 0.2);
-      const accel = target > v ? 2.2 : -2.8; // gentle, legal driving
-      v = Math.max(1.5, accel > 0 ? Math.min(target, v + accel * dt) : Math.max(target, v + accel * dt));
-      pos = Math.min(legM, pos + v * dt);
-      const p = lerp(a, b, pos / legM);
-      push(p.lat, p.lng, v);
-    }
+  // Treat waypoints as a polyline (works for sparse waypoints and dense road geometry alike).
+  const path = route.waypoints.map(([lat, lng]) => ({ lat, lng }));
+  const cum: number[] = [0];
+  for (let i = 1; i < path.length; i++) cum.push(cum[i - 1]! + haversine(path[i - 1]!, path[i]!));
+  const total = cum[cum.length - 1]!;
+  const segAt = (d: number) => {
+    let lo = 0, hi = path.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (cum[mid]! <= d) lo = mid; else hi = mid; }
+    return lo;
+  };
+  const pointAt = (d: number) => {
+    const i = segAt(Math.min(d, total));
+    const len = cum[i + 1]! - cum[i]!;
+    return lerp(path[i]!, path[i + 1]!, len > 0 ? (Math.min(d, total) - cum[i]!) / len : 0);
+  };
+  const bearing = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) =>
+    Math.atan2((b.lng - a.lng) * Math.cos((a.lat * Math.PI) / 180), b.lat - a.lat);
+  /** Safe speed for the road ahead: slow down for corners (heading change over the next ~60 m). */
+  const cornerLimit = (d: number) => {
+    const h1 = bearing(pointAt(d), pointAt(d + 15));
+    const h2 = bearing(pointAt(d + 40), pointAt(d + 70));
+    let turn = Math.abs(h2 - h1);
+    if (turn > Math.PI) turn = 2 * Math.PI - turn;
+    const deg = (turn * 180) / Math.PI;
+    return deg > 70 ? 5.5 : deg > 40 ? 8.5 : deg > 20 ? 12 : Infinity;
+  };
+
+  let pos = 0;
+  let v = 0;
+  let cruise = route.cruiseMs * (0.9 + rand() * 0.2);
+  while (pos < total) {
+    if (rand() < 0.01) cruise = route.cruiseMs * (0.9 + rand() * 0.2);
+    const remaining = total - pos;
+    const target = Math.min(cruise, cornerLimit(pos), remaining < 250 ? Math.max(3, remaining / 20) : Infinity);
+    const accel = target > v ? 2.2 : -2.8; // gentle, legal driving
+    v = Math.max(1.5, accel > 0 ? Math.min(target, v + accel * dt) : Math.max(target, v + accel * dt));
+    pos = Math.min(total, pos + v * dt);
+    const p = pointAt(pos);
+    push(p.lat, p.lng, v);
   }
   // decelerate to stop at destination
   const last = route.waypoints[route.waypoints.length - 1]!;

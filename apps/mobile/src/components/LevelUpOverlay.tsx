@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, Modal, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useTracking } from '@/stores/tracking';
-import { radius, space } from '@/theme/tokens';
+import { CHROME, radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { AppText } from './ui/AppText';
 import { Button } from './ui/Button';
@@ -38,8 +38,9 @@ export function LevelUpOverlay() {
         <View style={styles.center}>
           <Animated.View style={[styles.halo, { backgroundColor: colors.accent }, halo]} />
           <Animated.View style={[styles.badge, badge]}>
-            <LinearGradient colors={[colors.accent, colors.accent2]} style={StyleSheet.absoluteFill} />
-            <AppText variant="hero" style={{ color: colors.onAccent }}>{level}</AppText>
+            <LinearGradient colors={[...CHROME]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+            <View style={[styles.ring, { borderColor: colors.accent }]} />
+            <AppText variant="hero" style={{ color: '#0B0C0E' }}>{level}</AppText>
           </Animated.View>
           <AppText variant="h1" style={styles.text}>{t('levelUp.title')}</AppText>
           <AppText variant="h3" color="accent" style={styles.text}>{rankLabel(info, i18n.language)}</AppText>
@@ -56,4 +57,5 @@ const styles = StyleSheet.create({
   halo: { position: 'absolute', top: 0, width: 160, height: 160, borderRadius: 80 },
   badge: { width: 160, height: 160, borderRadius: radius.lg * 2, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: space.lg },
   text: { textAlign: 'center' },
+  ring: { ...StyleSheet.absoluteFill, borderWidth: 4, borderRadius: radius.lg * 2 },
 });

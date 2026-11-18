@@ -15,7 +15,8 @@ export function SettingRow({ label, hint, value, onValueChange, onPress, right }
       </View>
       {onValueChange ? (
         <Switch value={!!value} onValueChange={onValueChange} accessibilityLabel={label}
-          trackColor={{ true: colors.accent, false: colors.surfaceAlt }} thumbColor="#fff" />
+          trackColor={{ true: colors.accent, false: colors.surfaceAlt }} thumbColor="#F2F3F5"
+          {...({ activeThumbColor: '#FFFFFF', activeTrackColor: colors.accent } as object)} />
       ) : right}
     </View>
   );

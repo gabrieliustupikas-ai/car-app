@@ -1,113 +1,231 @@
 /**
- * Web preview map. Draws a stylised Lithuania (cities + grid) and routes as glowing SVG paths,
- * so the browser demo shows real drives without the native Mapbox SDK.
+ * Web map (MapLibre GL + OpenFreeMap vector tiles). Same component API as RoadMap.tsx (Mapbox native):
+ * <RoadMap> plus overlay children <RouteLine>, <DriversLayer>, <PlacesLayer>, <UserPuck>.
  */
-import { createContext, forwardRef, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { KLAIPEDA_CENTER } from '@roadclub/core';
+import { Map as MlMap, setWorkerUrl, type GeoJSONSource, type LayerSpecification, type MapLayerMouseEvent } from 'maplibre-gl';
+import { createContext, forwardRef, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/theme/useTheme';
+import { buildMapStyle } from './mapStyle';
+import type { MapDriver, MapPlace, RoadMapProps } from './types';
 
-type Bounds = { minLng: number; minLat: number; maxLng: number; maxLat: number };
-const LT: Bounds = { minLng: 20.9, minLat: 53.85, maxLng: 26.9, maxLat: 56.5 };
-const CITIES: [string, number, number][] = [
-  ['Vilnius', 25.2797, 54.6872], ['Kaunas', 23.9036, 54.8985], ['Klaipėda', 21.1443, 55.7033], ['Šiauliai', 23.3141, 55.9349],
-  ['Panevėžys', 24.3575, 55.7348], ['Alytus', 24.0458, 54.3963], ['Marijampolė', 23.3536, 54.5599], ['Utena', 25.5998, 55.4976],
-  ['Telšiai', 22.2446, 55.9814], ['Tauragė', 22.2896, 55.2522], ['Trakai', 24.9335, 54.6379], ['Nida', 21.0059, 55.3089],
-  ['Palanga', 21.0686, 55.9175], ['Druskininkai', 23.9696, 54.0177], ['Zarasai', 26.2460, 55.7300],
-];
+export type { MapDriver, MapPlace } from './types';
 
-interface Ctx { project: (lng: number, lat: number) => [number, number]; report: (id: string, b: Bounds | null) => void; w: number; h: number }
-const MapCtx = createContext<Ctx | null>(null);
+// Served from apps/mobile/public (copied by scripts/copy-maplibre-worker.mjs).
+setWorkerUrl('/maplibre-gl-worker.mjs');
 
-/** Fit bounds into a W×H viewport (equirectangular, latitude-corrected), leaving room for overlays. */
-function makeProjection(b: Bounds, W: number, H: number) {
-  const midLat = ((b.minLat + b.maxLat) / 2) * (Math.PI / 180);
-  const w = Math.max(1e-4, (b.maxLng - b.minLng) * Math.cos(midLat));
-  const h = Math.max(1e-4, b.maxLat - b.minLat);
-  const scale = Math.min((W * 0.86) / w, (H * 0.6) / h);
-  const ox = (W - w * scale) / 2, oy = (H - h * scale) / 2;
-  return (lng: number, lat: number): [number, number] =>
-    [ox + (lng - b.minLng) * Math.cos(midLat) * scale, oy + (b.maxLat - lat) * scale];
+const MapCtx = createContext<{ map: MlMap | null; version: number }>({ map: null, version: 0 });
+
+const CAR_COLORS: Record<MapDriver['carColor'], { fill: string; stroke: string }> = {
+  red: { fill: '#E10600', stroke: '#FFFFFF' },
+  silver: { fill: '#C9CED6', stroke: '#0B0C0E' },
+  black: { fill: '#16181B', stroke: '#C9CED6' },
+};
+
+/** Car puck: a rounded arrow drawn on a canvas, rotated on the map by heading. */
+function carImage(fill: string, stroke: string) {
+  const s = 64, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d')!;
+  g.translate(s / 2, s / 2);
+  g.shadowColor = 'rgba(0,0,0,0.6)';
+  g.shadowBlur = 8;
+  g.beginPath();
+  g.moveTo(0, -24); g.lineTo(17, 20); g.quadraticCurveTo(0, 10, -17, 20); g.closePath();
+  g.fillStyle = fill; g.fill();
+  g.shadowBlur = 0; g.lineWidth = 4; g.strokeStyle = stroke; g.stroke();
+  return g.getImageData(0, 0, s, s);
 }
 
-interface Props { follow?: boolean; interactive?: boolean; bounds?: { ne: [number, number]; sw: [number, number] } | null; pitch?: number; showUser?: boolean; compact?: boolean }
+export const RoadMap = forwardRef<unknown, PropsWithChildren<RoadMapProps>>(function RoadMap(
+  { children, bounds, followCoord, interactive = true, pitch = 50, controlsBottomInset = 0 }, _ref,
+) {
+  const host = useRef<unknown>(null);
+  const { scheme } = useTheme();
+  const [map, setMap] = useState<MlMap | null>(null);
+  const [version, setVersion] = useState(0);
 
-export const RoadMap = forwardRef<unknown, PropsWithChildren<Props>>(function RoadMap({ children, bounds }, _ref) {
-  const { colors } = useTheme();
-  const [routes, setRoutes] = useState<Record<string, Bounds | null>>({});
-  const view = useMemo<Bounds>(() => {
-    const rs = Object.values(routes).filter((r): r is Bounds => !!r);
-    if (rs.length) {
-      const b = rs.reduce((a, r) => ({ minLng: Math.min(a.minLng, r.minLng), minLat: Math.min(a.minLat, r.minLat), maxLng: Math.max(a.maxLng, r.maxLng), maxLat: Math.max(a.maxLat, r.maxLat) }));
-      const pad = Math.max(b.maxLat - b.minLat, (b.maxLng - b.minLng) * 0.6, 0.01) * 0.15;
-      return { minLng: b.minLng - pad, minLat: b.minLat - pad, maxLng: b.maxLng + pad, maxLat: b.maxLat + pad };
-    }
-    if (bounds) return { minLng: bounds.sw[0], minLat: bounds.sw[1], maxLng: bounds.ne[0], maxLat: bounds.ne[1] };
-    return LT;
-  }, [routes, bounds]);
-  const [size, setSize] = useState({ w: 400, h: 800 });
-  const project = useMemo(() => makeProjection(view, size.w, size.h), [view, size]);
-  const ctx = useMemo<Ctx>(() => ({
-    project, w: size.w, h: size.h,
-    report: (id, b) => setRoutes((prev) => (prev[id] === b ? prev : { ...prev, [id]: b })),
-  }), [project, size]);
-  const zoomedOut = view.maxLng - view.minLng > 1.5;
+  useEffect(() => {
+    const el = host.current as unknown as HTMLElement | null;
+    if (!el) return;
+    el.classList.add('rc-map');
+    const m = new MlMap({
+      container: el,
+      style: buildMapStyle(scheme),
+      center: KLAIPEDA_CENTER,
+      zoom: 12.4,
+      pitch,
+      bearing: -14,
+      interactive,
+      attributionControl: { compact: true },
+      maxPitch: 70,
+    });
+    const addImages = () => {
+      for (const [k, v] of Object.entries(CAR_COLORS)) if (!m.hasImage(`rc-car-${k}`)) m.addImage(`rc-car-${k}`, carImage(v.fill, v.stroke), { pixelRatio: 2 });
+    };
+    m.on('load', () => {
+      addImages();
+      el.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show');
+      setMap(m);
+      setVersion((x) => x + 1);
+    });
+    m.on('style.load', () => { addImages(); setVersion((x) => x + 1); });
+    return () => { setMap(null); m.remove(); };
+    // the map instance is created once; theme/bounds/follow are applied by the effects below
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const appliedScheme = useRef(scheme);
+  useEffect(() => {
+    if (!map || appliedScheme.current === scheme) return;
+    appliedScheme.current = scheme;
+    map.setStyle(buildMapStyle(scheme));
+  }, [map, scheme]);
+
+  useEffect(() => {
+    if (map && bounds) map.fitBounds([bounds.sw, bounds.ne], { padding: { top: 70, bottom: 40, left: 40, right: 40 }, duration: 0, pitch: 0, bearing: 0 });
+  }, [map, bounds]);
+
+  const fLng = followCoord?.[0], fLat = followCoord?.[1];
+  useEffect(() => {
+    if (map && fLng != null && fLat != null) map.easeTo({ center: [fLng, fLat], zoom: Math.max(map.getZoom(), 14.6), pitch: 55, duration: 900 });
+  }, [map, fLng, fLat]);
 
   return (
-    <View style={StyleSheet.absoluteFill} onLayout={(e) => {
-      const { width, height } = e.nativeEvent.layout;
-      if (width > 0 && height > 0) setSize({ w: width, h: height });
-    }}>
-      <LinearGradient colors={[colors.surface, colors.bg]} style={StyleSheet.absoluteFill} />
-      <svg viewBox={`0 0 ${size.w} ${size.h}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} aria-hidden>
-        {Array.from({ length: Math.ceil(Math.max(size.w, size.h) / 40) + 1 }, (_, i) => (
-          <g key={i} stroke={colors.glassBorder} strokeWidth={1}>
-            <line x1={i * 40} y1={0} x2={i * 40} y2={size.h} />
-            <line x1={0} y1={i * 40} x2={size.w} y2={i * 40} />
-          </g>
-        ))}
-        {CITIES.map(([name, lng, lat]) => {
-          const [x, y] = project(lng, lat);
-          if (x < 0 || y < 0 || x > size.w || y > size.h) return null;
-          return (
-            <g key={name}>
-              <circle cx={x} cy={y} r={zoomedOut ? 3 : 4} fill={colors.textFaint} />
-              <text x={x + 7} y={y + 4} fill={colors.textMuted} fontSize={zoomedOut ? 12 : 14} fontFamily="system-ui, sans-serif">{name}</text>
-            </g>
-          );
-        })}
-      </svg>
-      <MapCtx.Provider value={ctx}>{children}</MapCtx.Provider>
+    // maplibre's CSS makes its container position:relative, so size it with flex inside an absolute wrapper
+    <View style={StyleSheet.absoluteFill}>
+      <style>{`.rc-map .maplibregl-ctrl-bottom-right,.rc-map .maplibregl-ctrl-bottom-left{bottom:var(--rc-bottom,0px)}`}</style>
+      <View ref={host as never} style={{ flex: 1, ['--rc-bottom' as string]: `${controlsBottomInset}px` } as never}>
+        <MapCtx.Provider value={{ map, version }}>{children}</MapCtx.Provider>
+      </View>
     </View>
   );
 });
 
-export function RouteLine({ id, coordinates }: { id: string; coordinates: [number, number][] }) {
-  const ctx = useContext(MapCtx);
-  const { colors } = useTheme();
-  const b = useMemo<Bounds | null>(() => {
-    if (coordinates.length < 2) return null;
-    let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
-    for (const [lng, lat] of coordinates) {
-      minLng = Math.min(minLng, lng); maxLng = Math.max(maxLng, lng); minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
-    }
-    return { minLng, minLat, maxLng, maxLat };
-  }, [coordinates]);
-  const report = ctx?.report;
-  useEffect(() => { report?.(id, b); }, [report, id, b]);
-  useEffect(() => () => report?.(id, null), [report, id]);
-  if (!ctx || coordinates.length < 2) return null;
+/** Adds a GeoJSON source + layers while mounted; re-adds after style (theme) changes. */
+function useGeoJsonLayers(id: string, data: GeoJSON.FeatureCollection | GeoJSON.Feature, layers: LayerSpecification[], key: string,
+  onClick?: (props: Record<string, unknown>) => void) {
+  const { map, version } = useContext(MapCtx);
+  const dataRef = useRef(data);
+  const clickRef = useRef(onClick);
+  useLayoutEffect(() => { dataRef.current = data; clickRef.current = onClick; });
 
-  const pts = coordinates.map(([lng, lat]) => ctx.project(lng, lat));
-  const d = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('');
-  const [sx, sy] = pts[0]!;
-  const [ex, ey] = pts[pts.length - 1]!;
-  return (
-    <svg viewBox={`0 0 ${ctx.w} ${ctx.h}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} aria-hidden>
-      <path d={d} fill="none" stroke={colors.route} strokeOpacity={0.25} strokeWidth={12} strokeLinecap="round" strokeLinejoin="round" />
-      <path d={d} fill="none" stroke={colors.route} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={sx} cy={sy} r={6} fill={colors.bg} stroke={colors.route} strokeWidth={3} />
-      <circle cx={ex} cy={ey} r={7} fill={colors.route} />
-    </svg>
-  );
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    if (!map) return;
+    // isStyleLoaded() is also false while *any* GeoJSON source is still parsing, so instead of bailing
+    // out, try to add and retry on the next idle frame if the style really isn't ready yet.
+    try {
+      if (!map.getSource(id)) map.addSource(id, { type: 'geojson', data: dataRef.current });
+      for (const l of layers) if (!map.getLayer(l.id)) map.addLayer(l);
+    } catch (e) {
+      if (retry < 20) map.once('idle', () => setRetry((r) => r + 1));
+      else console.warn('[map] layer setup failed', id, e);
+      return;
+    }
+    const handlers = layers.filter((l) => l.type !== 'line').map((l) => {
+      const click = (e: MapLayerMouseEvent) => { const f = e.features?.[0]; if (f) clickRef.current?.(f.properties ?? {}); };
+      const enter = () => { map.getCanvas().style.cursor = 'pointer'; };
+      const leave = () => { map.getCanvas().style.cursor = ''; };
+      map.on('click', l.id, click); map.on('mouseenter', l.id, enter); map.on('mouseleave', l.id, leave);
+      return () => { map.off('click', l.id, click); map.off('mouseenter', l.id, enter); map.off('mouseleave', l.id, leave); };
+    });
+    return () => {
+      handlers.forEach((off) => off());
+      try {
+        for (const l of layers) if (map.getLayer(l.id)) map.removeLayer(l.id);
+        if (map.getSource(id)) map.removeSource(id);
+      } catch { /* map already removed */ }
+    };
+    // `key` captures the layer styling (theme) so layers are rebuilt when it changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, version, id, key, retry]);
+
+  useEffect(() => {
+    try { (map?.getSource(id) as GeoJSONSource | undefined)?.setData(data); } catch { /* not ready */ }
+  }, [map, version, id, data]);
+}
+
+export function RouteLine({ id, coordinates }: { id: string; coordinates: [number, number][] }) {
+  const { colors } = useTheme();
+  const data = useMemo<GeoJSON.Feature>(() => ({
+    type: 'Feature', properties: {},
+    geometry: { type: 'LineString', coordinates: coordinates.length >= 2 ? coordinates : [] },
+  }), [coordinates]);
+  useGeoJsonLayers(`${id}-route`, data, [
+    { id: `${id}-route-glow`, type: 'line', source: `${id}-route`, layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': colors.route, 'line-width': 14, 'line-opacity': 0.25, 'line-blur': 6 } },
+    { id: `${id}-route-line`, type: 'line', source: `${id}-route`, layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': colors.route, 'line-width': 4.5 } },
+  ], colors.route);
+  return null;
+}
+
+export function DriversLayer({ drivers, onPress }: { drivers: MapDriver[]; onPress?: (id: string) => void }) {
+  const { colors, scheme } = useTheme();
+  const data = useMemo<GeoJSON.FeatureCollection>(() => ({
+    type: 'FeatureCollection',
+    features: drivers.map((d) => ({
+      type: 'Feature', properties: { id: d.id, name: d.name, color: d.carColor, heading: d.heading },
+      geometry: { type: 'Point', coordinates: [d.lng, d.lat] },
+    })),
+  }), [drivers]);
+  useGeoJsonLayers('rc-drivers', data, [
+    { id: 'rc-drivers-halo', type: 'circle', source: 'rc-drivers',
+      paint: { 'circle-radius': 15, 'circle-color': colors.accent, 'circle-opacity': 0.12, 'circle-stroke-width': 1, 'circle-stroke-color': colors.accent, 'circle-stroke-opacity': 0.35 } },
+    { id: 'rc-drivers-car', type: 'symbol', source: 'rc-drivers',
+      layout: { 'icon-image': ['concat', 'rc-car-', ['get', 'color']], 'icon-size': 0.75, 'icon-rotate': ['get', 'heading'],
+        'icon-rotation-alignment': 'map', 'icon-pitch-alignment': 'map', 'icon-allow-overlap': true, 'icon-ignore-placement': true } },
+    { id: 'rc-drivers-name', type: 'symbol', source: 'rc-drivers', minzoom: 12,
+      layout: { 'text-field': ['get', 'name'], 'text-font': ['Noto Sans Bold'], 'text-size': 11, 'text-offset': [0, 1.7], 'text-anchor': 'top', 'text-allow-overlap': true },
+      paint: { 'text-color': scheme === 'dark' ? '#E6E9EE' : '#0B0C0E', 'text-halo-color': scheme === 'dark' ? '#050506' : '#FFFFFF', 'text-halo-width': 1.4 } },
+  ], `${colors.accent}-${scheme}`, (p) => onPress?.(String(p.id)));
+  return null;
+}
+
+const PLACE_COLORS: Record<string, string> = {
+  viewpoint: '#FFFFFF', photo_spot: '#C9CED6', ev_charger: '#34C77B', fuel: '#F2B33D', meet_spot: '#E10600',
+  detailing: '#8AB4F8', tires: '#8AB4F8', parking: '#8AB4F8',
+};
+
+export function PlacesLayer({ places, onPress }: { places: MapPlace[]; onPress?: (id: string) => void }) {
+  const { scheme } = useTheme();
+  const data = useMemo<GeoJSON.FeatureCollection>(() => ({
+    type: 'FeatureCollection',
+    features: places.map((p) => ({
+      type: 'Feature', properties: { id: p.id, title: p.title, category: p.category },
+      geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+    })),
+  }), [places]);
+  useGeoJsonLayers('rc-places', data, [
+    { id: 'rc-places-dot', type: 'circle', source: 'rc-places', minzoom: 11,
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 2.5, 16, 6],
+        // photo spots (street sculptures etc.) only appear once you zoom into the city
+        'circle-opacity': ['interpolate', ['linear'], ['zoom'], 13.5, ['case', ['==', ['get', 'category'], 'photo_spot'], 0, 1], 14.5, 1],
+        'circle-stroke-opacity': ['interpolate', ['linear'], ['zoom'], 13.5, ['case', ['==', ['get', 'category'], 'photo_spot'], 0, 1], 14.5, 1],
+        'circle-color': ['match', ['get', 'category'], ...Object.entries(PLACE_COLORS).flat(), '#C9CED6'] as never,
+        'circle-stroke-width': 1.5, 'circle-stroke-color': scheme === 'dark' ? '#050506' : '#FFFFFF',
+      } },
+    { id: 'rc-places-label', type: 'symbol', source: 'rc-places', minzoom: 14.5,
+      layout: { 'text-field': ['get', 'title'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 1], 'text-anchor': 'top', 'text-optional': true },
+      paint: { 'text-color': scheme === 'dark' ? '#A3A9B2' : '#4A5059', 'text-halo-color': scheme === 'dark' ? '#050506' : '#FFFFFF', 'text-halo-width': 1.2 } },
+  ], scheme, (p) => onPress?.(String(p.id)));
+  return null;
+}
+
+export function UserPuck({ coord }: { coord: [number, number] | null }) {
+  const { colors } = useTheme();
+  const data = useMemo<GeoJSON.FeatureCollection>(() => ({
+    type: 'FeatureCollection',
+    features: coord ? [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: coord } }] : [],
+  }), [coord]);
+  useGeoJsonLayers('rc-me', data, [
+    { id: 'rc-me-halo', type: 'circle', source: 'rc-me', paint: { 'circle-radius': 22, 'circle-color': colors.accent, 'circle-opacity': 0.2 } },
+    { id: 'rc-me-dot', type: 'circle', source: 'rc-me',
+      paint: { 'circle-radius': 8, 'circle-color': colors.accent, 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' } },
+  ], colors.accent);
+  return null;
 }

@@ -11,7 +11,8 @@
     "test": "jest --passWithNoTests",
     "lint": "eslint .",
     "doctor": "expo-doctor",
-    "build:web": "expo export --platform web"
+    "build:web": "node ../../scripts/copy-maplibre-worker.mjs && expo export --platform web",
+    "web": "node ../../scripts/copy-maplibre-worker.mjs && expo start --web"
   },
   "dependencies": {
     "@roadclub/core": "*",
@@ -54,7 +55,8 @@
     "expo-splash-screen": "~58.0.14",
     "react-dom": "19.3.0",
     "react-native-web": "~0.21.4",
-    "@expo/metro-runtime": "~58.0.17"
+    "@expo/metro-runtime": "~58.0.17",
+    "maplibre-gl": "^6.19.0"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",

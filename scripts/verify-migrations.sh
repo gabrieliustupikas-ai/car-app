@@ -22,7 +22,9 @@ for f in "$ROOT"/supabase/migrations/*.sql; do
   echo "→ $(basename "$f")"
   "${PSQL[@]}" -d roadclub -f "$f"
 done
-echo "→ seed.sql"
-"${PSQL[@]}" -d roadclub -f "$ROOT/supabase/seed.sql"
+for f in seed.sql seed_klaipeda.sql; do
+  echo "→ $f"
+  "${PSQL[@]}" -d roadclub -f "$ROOT/supabase/$f"
+done
 echo "→ db_test.sql"
 "${PSQL[@]}" -d roadclub -f "$ROOT/supabase/tests/db_test.sql"

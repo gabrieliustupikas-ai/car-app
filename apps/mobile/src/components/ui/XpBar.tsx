@@ -17,7 +17,7 @@ export function XpBar({ progress, height = 12 }: { progress: number; height?: nu
       style={[styles.track, { height, backgroundColor: colors.surfaceAlt }]}
     >
       <Animated.View style={[styles.fill, fill]}>
-        <LinearGradient colors={[colors.accent, colors.accent2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['#7A0300', colors.accent, '#FF5A4F']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
     </View>
   );

@@ -83,3 +83,41 @@ describe('sampling & days', () => {
     expect(localDayStart(t, 'Europe/Vilnius')).toBe(Date.UTC(2026, 4, 31, 21, 0));
   });
 });
+
+describe('Klaipėda demo data', async () => {
+  const { KLAIPEDA_ROUTES, KLAIPEDA_PLACES, KLAIPEDA_DRIVER_LOOPS, KLAIPEDA_BOUNDS } = await import('../demo/klaipeda.ts');
+  const { DEMO_DRIVERS, demoDriverPosition } = await import('../demo/liveDrivers.ts');
+  const { analyzeTrip } = await import('../antiCheat.ts');
+  const inside = (lng: number, lat: number) =>
+    lng >= KLAIPEDA_BOUNDS.minLng && lng <= KLAIPEDA_BOUNDS.maxLng && lat >= KLAIPEDA_BOUNDS.minLat && lat <= KLAIPEDA_BOUNDS.maxLat;
+
+  it('has a loop for every driver, inside Klaipėda', () => {
+    for (const d of DEMO_DRIVERS) {
+      const loop = KLAIPEDA_DRIVER_LOOPS[d.id]!;
+      expect(loop.length).toBeGreaterThan(10);
+      expect(loop.every(([lng, lat]) => inside(lng, lat))).toBe(true);
+      const p = demoDriverPosition(d, T0)!;
+      expect(inside(p.lng, p.lat)).toBe(true);
+    }
+  });
+  it('moves drivers smoothly at legal urban speeds', () => {
+    const d = DEMO_DRIVERS[0]!;
+    const a = demoDriverPosition(d, T0)!, b = demoDriverPosition(d, T0 + 1000)!;
+    const step = haversine(a, b);
+    expect(step).toBeGreaterThan(3);
+    expect(step).toBeLessThan(20);
+  });
+  it('generates realistic Klaipėda demo trips that pass anti-cheat', () => {
+    for (const r of KLAIPEDA_ROUTES) {
+      const pts = generateTrip(r, { startAt: T0, seed: 3 });
+      const s = computeTripStats(pts);
+      expect(s.distanceM).toBeGreaterThan(4000);
+      expect(s.elevationGainM).toBeLessThan(120);
+      expect(analyzeTrip(pts, T0 + 24 * 3600_000).verdict).toBe('ok');
+    }
+  });
+  it('lists real places', () => {
+    expect(KLAIPEDA_PLACES.find((p) => p.title === 'Klaipėdos pilis')).toBeTruthy();
+    expect(KLAIPEDA_PLACES.length).toBeGreaterThan(50);
+  });
+});
