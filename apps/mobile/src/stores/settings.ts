@@ -33,7 +33,7 @@ export const DEFAULT_RETENTION_DAYS = 365;
 
 const initial = {
   language: detectLanguage(),
-  themePreference: 'dark' as const,
+  themePreference: 'light' as const,
   highContrast: false,
   ageConfirmed: false,
   consents: null,

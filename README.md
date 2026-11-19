@@ -143,6 +143,13 @@ NODE_USE_ENV_PROXY=1 node scripts/klaipeda/fetch-tiles.mjs && node scripts/klaip
 3. **Sync.** After a 6 min merge window, the trip is compressed (`core/codec`, about 12 bytes per fix) and POSTed to `trip-ingest`. The server re-runs the **same** core code, so the client is never trusted. It stores everything atomically in `ingest_trip()` under a per-user advisory lock and re-counts new hexes inside that transaction. Uploads are idempotent on `client_trip_id`, and retries use exponential backoff.
 4. **Display.** The authoritative XP replaces the preview. Level-ups trigger an animated overlay with haptics.
 
+## Community features (Phase 3 preview)
+
+- **New design:** light, glassy UI with a floating pill tab bar (Home · Discover · Trips · Radio · Profile). Change `ACCENT` in `theme/tokens.ts` to re-skin.
+- **Online drivers:** the Home map shows drivers who are driving *and* chose to be visible (`online_drivers()` RPC honours visibility, blocks and Safe Areas). Tap a pin or the "online" pill to invite someone on a cruise (`cruise_invites`).
+- **Police / checkpoint reports:** one-tap reports (police, hidden police, checkpoint) that expire after ~90 min, can be confirmed (+15 min) or dismissed, and are rate-limited to 6 per hour (`road_reports`, migration 0010). Check local law before shipping this in each country.
+- **Discover:** car showcase (`cars`), clubs, stories (`stories`, 24 h) and shared drives. Stories upload and real club data are the next step; demo content is used until then.
+
 ## Safety & privacy guarantees (enforced in code)
 
 - No speed-based scoring. `TripXpInput` has no speed field, no table stores max speed, and leaderboards (Phase 2) use only distance, exploration, streaks and XP.

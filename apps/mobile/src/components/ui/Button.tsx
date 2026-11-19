@@ -51,5 +51,5 @@ export function Button({ label, onPress, variant = 'primary', size = 'lg', disab
 const styles = StyleSheet.create({
   base: { borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.xl },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  glow: { shadowColor: '#E10600', shadowOpacity: 0.45, shadowRadius: 18, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
+  glow: { shadowColor: '#F04349', shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
 });

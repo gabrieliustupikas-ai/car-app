@@ -2,13 +2,13 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { PropsWithChildren } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { radius, space } from '@/theme/tokens';
+import { radius, shadow, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 export function GlassCard({ children, style, padded = true }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; padded?: boolean }>) {
   const { colors, scheme } = useTheme();
   return (
-    <View style={[styles.wrap, { borderColor: colors.glassBorder }, style]}>
+    <View style={[styles.wrap, scheme === 'light' && shadow, { borderColor: colors.glassBorder, backgroundColor: scheme === 'light' ? colors.surface : undefined }, style]}>
       <BlurView intensity={40} tint={scheme === 'dark' ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.glass }]} />
       {/* brushed-silver top edge, like a chrome trim line */}

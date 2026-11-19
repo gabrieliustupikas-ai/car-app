@@ -18,7 +18,8 @@ jobs:
       - run: npm run lint
 
   database:
-    runs-on: ubuntu-latest
+    # pinned: ubuntu-latest moved to Ubuntu 26, which no longer ships postgresql-16 (apt exit code 100)
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install PostgreSQL 16 + PostGIS

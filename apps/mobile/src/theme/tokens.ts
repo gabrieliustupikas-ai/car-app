@@ -2,7 +2,7 @@
  * Design tokens — "silver car on black" automotive palette: piano-black surfaces, brushed-silver
  * text and chrome, one racing-red accent. Change ACCENT to re-skin buttons, routes, XP and highlights.
  */
-export const ACCENT = '#E10600'; // racing red
+export const ACCENT = '#F04349'; // signal red (matches the new light design)
 export const ACCENT_2 = '#C9CED6'; // brushed silver (gradients, chrome details)
 
 /** Brushed-metal gradient stops used for chrome surfaces (logo, level badge, cards' top edge). */
@@ -24,25 +24,25 @@ export const palette = {
     success: '#34C77B',
     warning: '#F2B33D',
     danger: '#FF3B30',
-    route: '#FF2A1F',
+    route: '#FF4B50',
     overlay: 'rgba(0,0,0,0.6)',
   },
   light: {
-    bg: '#EEF0F2',
+    bg: '#F3F4F7',
     surface: '#FFFFFF',
-    surfaceAlt: '#E2E5E9',
-    glass: 'rgba(255, 255, 255, 0.84)',
-    glassBorder: 'rgba(20, 22, 26, 0.10)',
-    text: '#0B0C0E',
-    textMuted: '#4A5059',
-    textFaint: '#868C95',
-    accent: '#C40500', // deeper red for contrast on light surfaces (WCAG AA)
+    surfaceAlt: '#F1F2F6',
+    glass: 'rgba(255, 255, 255, 0.94)',
+    glassBorder: 'rgba(20, 22, 26, 0.06)',
+    text: '#0E0F13',
+    textMuted: '#5B616B',
+    textFaint: '#9AA0AA',
+    accent: '#EE3B41', // red on white — large/bold text only, button labels are white on it
     accent2: '#7D838C',
     onAccent: '#FFFFFF',
     success: '#118A4E',
     warning: '#A86A00',
     danger: '#C8231B',
-    route: '#D40800',
+    route: '#EE3B41',
     overlay: 'rgba(0,0,0,0.35)',
   },
 } as const;
@@ -50,7 +50,9 @@ export const palette = {
 export type Colors = { -readonly [K in keyof (typeof palette)['dark']]: string };
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
-export const radius = { sm: 10, md: 16, lg: 24, pill: 999 } as const;
+export const radius = { sm: 12, md: 18, lg: 26, xl: 32, pill: 999 } as const;
+/** Soft card shadow used by the light design (iOS shadow + Android elevation). */
+export const shadow = { shadowColor: '#1B2030', shadowOpacity: 0.1, shadowRadius: 22, shadowOffset: { width: 0, height: 8 }, elevation: 6 } as const;
 export const type = {
   // large, legible type — scales with the OS font size (allowFontScaling is on everywhere)
   hero: { fontSize: 46, fontWeight: '800' as const, letterSpacing: -1.5 },

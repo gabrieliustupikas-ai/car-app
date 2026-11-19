@@ -6,12 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { hasMapbox } from '@/config/env';
 import { KLAIPEDA_CENTER } from '@roadclub/core';
 import { MAP_STYLE, Mapbox } from '@/lib/mapbox';
-import type { MapDriver, MapPlace, RoadMapProps } from './types';
+import type { MapDriver, MapPlace, MapReport, RoadMapProps } from './types';
 import { useTheme } from '@/theme/useTheme';
 import { space } from '@/theme/tokens';
 import { AppText } from '@/components/ui/AppText';
 
-export type { MapDriver, MapPlace } from './types';
+export type { MapDriver, MapPlace, MapReport } from './types';
 
 type CameraRef = React.ComponentRef<typeof Mapbox.Camera>;
 
@@ -128,6 +128,23 @@ export function PlacesLayer({ places, onPress }: { places: MapPlace[]; onPress?:
       <Mapbox.CircleLayer id="rc-places-dot" minZoomLevel={11} style={{ circleRadius: 5, circleStrokeWidth: 1.5, circleEmissiveStrength: 1,
         circleStrokeColor: scheme === 'dark' ? '#050506' : '#FFFFFF',
         circleColor: ['match', ['get', 'category'], 'meet_spot', '#E10600', 'fuel', '#F2B33D', 'ev_charger', '#34C77B', 'viewpoint', '#FFFFFF', '#C9CED6'] }} />
+    </Mapbox.ShapeSource>
+  );
+}
+
+const REPORT_COLOR = ['match', ['get', 'kind'], 'police', '#2F6BFF', 'hidden_police', '#7A3CFF', 'checkpoint', '#F2B33D', '#2F6BFF'];
+
+/** Police / hidden police / checkpoint reports from other drivers (short-lived). */
+export function ReportsLayer({ reports, onPress }: { reports: MapReport[]; onPress?: (id: string) => void }) {
+  if (!hasMapbox) return null;
+  const shape = {
+    type: 'FeatureCollection' as const,
+    features: reports.map((r) => ({ type: 'Feature' as const, properties: { id: r.id, kind: r.kind }, geometry: { type: 'Point' as const, coordinates: [r.lng, r.lat] } })),
+  };
+  return (
+    <Mapbox.ShapeSource id="rc-reports" shape={shape} onPress={(e) => { const id = e.features[0]?.properties?.id; if (id) onPress?.(String(id)); }}>
+      <Mapbox.CircleLayer id="rc-reports-halo" style={{ circleRadius: 20, circleColor: REPORT_COLOR as never, circleOpacity: 0.2, circleEmissiveStrength: 1 }} />
+      <Mapbox.CircleLayer id="rc-reports-dot" style={{ circleRadius: 9, circleColor: REPORT_COLOR as never, circleStrokeWidth: 3, circleStrokeColor: '#FFFFFF', circleEmissiveStrength: 1 }} />
     </Mapbox.ShapeSource>
   );
 }

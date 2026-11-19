@@ -9,9 +9,9 @@ import { createContext, forwardRef, useContext, useEffect, useLayoutEffect, useM
 import { StyleSheet, View } from 'react-native';
 import { useTheme } from '@/theme/useTheme';
 import { buildMapStyle } from './mapStyle';
-import type { MapDriver, MapPlace, RoadMapProps } from './types';
+import type { MapDriver, MapPlace, MapReport, RoadMapProps } from './types';
 
-export type { MapDriver, MapPlace } from './types';
+export type { MapDriver, MapPlace, MapReport } from './types';
 
 // Served from apps/mobile/public (copied by scripts/copy-maplibre-worker.mjs).
 setWorkerUrl('/maplibre-gl-worker.mjs');
@@ -213,6 +213,22 @@ export function PlacesLayer({ places, onPress }: { places: MapPlace[]; onPress?:
       layout: { 'text-field': ['get', 'title'], 'text-font': ['Noto Sans Regular'], 'text-size': 11, 'text-offset': [0, 1], 'text-anchor': 'top', 'text-optional': true },
       paint: { 'text-color': scheme === 'dark' ? '#A3A9B2' : '#4A5059', 'text-halo-color': scheme === 'dark' ? '#050506' : '#FFFFFF', 'text-halo-width': 1.2 } },
   ], scheme, (p) => onPress?.(String(p.id)));
+  return null;
+}
+
+const REPORT_COLOR = ['match', ['get', 'kind'], 'police', '#2F6BFF', 'hidden_police', '#7A3CFF', 'checkpoint', '#F2B33D', '#2F6BFF'];
+
+/** Police / hidden police / checkpoint reports from other drivers (short-lived). */
+export function ReportsLayer({ reports, onPress }: { reports: MapReport[]; onPress?: (id: string) => void }) {
+  const data = useMemo<GeoJSON.FeatureCollection>(() => ({
+    type: 'FeatureCollection',
+    features: reports.map((r) => ({ type: 'Feature', properties: { id: r.id, kind: r.kind }, geometry: { type: 'Point', coordinates: [r.lng, r.lat] } })),
+  }), [reports]);
+  useGeoJsonLayers('rc-reports', data, [
+    { id: 'rc-reports-halo', type: 'circle', source: 'rc-reports', paint: { 'circle-radius': 20, 'circle-color': REPORT_COLOR as never, 'circle-opacity': 0.2 } },
+    { id: 'rc-reports-dot', type: 'circle', source: 'rc-reports',
+      paint: { 'circle-radius': 9, 'circle-color': REPORT_COLOR as never, 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' } },
+  ], 'reports', (p) => onPress?.(String(p.id)));
   return null;
 }
 

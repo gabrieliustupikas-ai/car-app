@@ -31,4 +31,5 @@ export const telemetry = {
 export type AnalyticsEvent =
   | 'onboarding_completed' | 'sign_in' | 'sign_out' | 'demo_mode_enabled'
   | 'trip_started' | 'trip_ended' | 'trip_discarded' | 'trip_synced' | 'trip_sync_failed'
-  | 'trip_marked_passenger' | 'level_up' | 'data_exported' | 'account_deleted' | 'drive_simulated';
+  | 'trip_marked_passenger' | 'level_up' | 'data_exported' | 'account_deleted' | 'drive_simulated'
+  | 'road_report_created' | 'cruise_invite_sent';

@@ -104,6 +104,7 @@ export default function RootLayout() {
               <Stack.Protected guard={inApp}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="trip/[id]" options={{ headerShown: true, headerTransparent: true, title: '', headerTintColor: colors.text }} />
+                <Stack.Screen name="car/[id]" />
               </Stack.Protected>
               <Stack.Protected guard={onboarded && !inApp}>
                 <Stack.Screen name="sign-in" />

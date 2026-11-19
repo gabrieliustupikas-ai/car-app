@@ -28,3 +28,12 @@ export interface MapPlace {
   lng: number;
   lat: number;
 }
+
+export type RoadReportKind = 'police' | 'hidden_police' | 'checkpoint';
+
+export interface MapReport {
+  id: string;
+  kind: RoadReportKind;
+  lng: number;
+  lat: number;
+}
