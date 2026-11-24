@@ -16,10 +16,10 @@ interface Palette {
 }
 
 const DARK: Palette = {
-  land: '#0B0C0E', landuse: '#0F1013', park: '#0F1712', water: '#0A1622', waterLine: '#12263A', building: '#17191C', buildingTop: '#24272B',
-  minor: '#25282D', minorCase: '#0B0C0E', mid: '#3B3F46', midCase: '#101114', major: '#5C626B', majorCase: '#16181B',
-  motorway: '#8D939C', motorwayCase: '#1D2024', rail: '#2A2D32', label: '#C9CED6', labelHalo: '#050506',
-  placeLabel: '#E6E9EE', roadLabel: '#9AA0A9', boundary: '#3A3E45',
+  land: '#12161A', landuse: '#151A1F', park: '#13211A', water: '#0C1B2A', waterLine: '#16304A', building: '#1B2026', buildingTop: '#2A3038',
+  minor: '#262C33', minorCase: '#12161A', mid: '#3A414A', midCase: '#14181C', major: '#5A626D', majorCase: '#191D22',
+  motorway: '#8B929C', motorwayCase: '#1E2227', rail: '#2C3239', label: '#C3C9D1', labelHalo: '#0B0D10',
+  placeLabel: '#EEF0F3', roadLabel: '#8E96A0', boundary: '#3A414A',
 };
 
 const LIGHT: Palette = {
@@ -78,14 +78,15 @@ export function buildMapStyle(scheme: 'dark' | 'light'): StyleSpecification {
         paint: { 'text-color': scheme === 'dark' ? '#4D6F91' : '#3F7CB0', 'text-halo-color': c.labelHalo, 'text-halo-width': 1 } },
       { id: 'road-name', type: 'symbol', source: 'omt', 'source-layer': 'transportation_name', minzoom: 13,
         filter: line(['primary', 'secondary', 'tertiary', 'trunk', 'minor']),
-        layout: { 'symbol-placement': 'line', 'text-field': ['coalesce', ['get', 'name:lt'], ['get', 'name']], 'text-font': ['Noto Sans Regular'],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 13, 10, 17, 13] },
+        layout: { 'symbol-placement': 'line', 'text-field': ['coalesce', ['get', 'name:lt'], ['get', 'name']], 'text-font': ['Noto Sans Bold'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 13, 9.5, 17, 12], 'text-transform': 'uppercase', 'text-letter-spacing': 0.08 },
         paint: { 'text-color': c.roadLabel, 'text-halo-color': c.labelHalo, 'text-halo-width': 1.2 } },
       { id: 'place-small', type: 'symbol', source: 'omt', 'source-layer': 'place', minzoom: 11,
         filter: ['match', ['get', 'class'], ['suburb', 'neighbourhood', 'quarter', 'village', 'hamlet'], true, false],
-        layout: { 'text-field': ['coalesce', ['get', 'name:lt'], ['get', 'name']], 'text-font': ['Noto Sans Regular'], 'text-size': 12,
-          'text-transform': 'uppercase', 'text-letter-spacing': 0.15 },
-        paint: { 'text-color': c.label, 'text-halo-color': c.labelHalo, 'text-halo-width': 1.2, 'text-opacity': 0.75 } },
+        layout: { 'text-field': ['coalesce', ['get', 'name:lt'], ['get', 'name']], 'text-font': ['Noto Sans Bold'],
+          'text-size': ['interpolate', ['linear'], ['zoom'], 11, 11, 15, 15],
+          'text-transform': 'uppercase', 'text-letter-spacing': 0.12, 'text-max-width': 7 },
+        paint: { 'text-color': c.label, 'text-halo-color': c.labelHalo, 'text-halo-width': 1.4, 'text-opacity': 0.9 } },
       { id: 'place-city', type: 'symbol', source: 'omt', 'source-layer': 'place',
         filter: ['match', ['get', 'class'], ['city', 'town'], true, false],
         layout: { 'text-field': ['coalesce', ['get', 'name:lt'], ['get', 'name']], 'text-font': ['Noto Sans Bold'],

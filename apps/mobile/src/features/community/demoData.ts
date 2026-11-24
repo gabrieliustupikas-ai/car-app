@@ -11,20 +11,20 @@ export const DEMO_VEHICLES: Vehicle[] = [
 ];
 
 export const DEMO_CLUBS: Club[] = [
-  { id: 'c1', name: 'Coast Cruisers', city: 'Klaipėda', members: 214, blurb: 'Sunday sunset drives along the Curonian Spit.', color: '#F04349' },
-  { id: 'c2', name: 'Klaipėda M-Club', city: 'Klaipėda', members: 168, blurb: 'M-cars only. Monthly meets at Akropolis.', color: '#2F6BFF' },
+  { id: 'c1', name: 'Coast Cruisers', city: 'Klaipėda', members: 214, blurb: 'Sunday sunset drives along the Curonian Spit.', color: '#E3262C' },
+  { id: 'c2', name: 'Klaipėda M-Club', city: 'Klaipėda', members: 168, blurb: 'M-cars only. Monthly meets at Akropolis.', color: '#8C929B' },
   { id: 'c3', name: 'Baltic Quattro', city: 'Vilnius', members: 342, blurb: 'Audi owners across the Baltics.', color: '#0E0F13' },
   { id: 'c4', name: 'Via Baltica Crew', city: 'Kaunas', members: 97, blurb: 'Weekend road trips, Riga ↔ Tallinn runs.', color: '#F2B33D' },
   { id: 'c5', name: 'Old Town Classics', city: 'Palanga', members: 76, blurb: 'Youngtimers and classics. Coffee first.', color: '#118A4E' },
 ];
 
 export const DEMO_STORIES: Story[] = [
-  { id: 's1', user: 'Mantas', initials: 'MK', car: 'BMW M550i', caption: 'Sunrise at Giruliai', color: '#F04349', hoursAgo: 1 },
+  { id: 's1', user: 'Mantas', initials: 'MK', car: 'BMW M550i', caption: 'Sunrise at Giruliai', color: '#E3262C', hoursAgo: 1 },
   { id: 's2', user: 'Greta', initials: 'GV', car: 'Audi RS3', caption: 'Fresh wash ✨', color: '#7D838C', hoursAgo: 3 },
-  { id: 's3', user: 'Tomas', initials: 'TR', car: 'Toyota GR86', caption: 'Spit run with the crew', color: '#2F6BFF', hoursAgo: 5 },
+  { id: 's3', user: 'Tomas', initials: 'TR', car: 'Toyota GR86', caption: 'Spit run with the crew', color: '#8C929B', hoursAgo: 5 },
   { id: 's4', user: 'Ieva', initials: 'IS', car: 'Porsche 911', caption: 'Coffee stop in Nida', color: '#0E0F13', hoursAgo: 8 },
   { id: 's5', user: 'Darius', initials: 'DP', car: 'AMG C63 S', caption: 'New exhaust, new sound', color: '#B9BEC6', hoursAgo: 11 },
-  { id: 's6', user: 'Lukas', initials: 'LB', car: 'Golf R', caption: 'Meet at Akropolis tonight', color: '#2F6BFF', hoursAgo: 14 },
+  { id: 's6', user: 'Lukas', initials: 'LB', car: 'Golf R', caption: 'Meet at Akropolis tonight', color: '#8C929B', hoursAgo: 14 },
 ];
 
 export const DEMO_DRIVES: SharedDrive[] = [

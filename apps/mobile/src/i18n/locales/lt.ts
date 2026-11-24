@@ -83,7 +83,7 @@ const lt: Translation = {
     layersSoon: 'Atradimų rūkas, vaizdingi keliai ir vietos — kitame atnaujinime.',
   },
   trips: {
-    title: 'Kelionės',
+    title: 'Kelionės', eyebrow: 'Kiekviena kelionė užfiksuota',
     empty: 'Kelionių dar nėra',
     emptyBody: 'Tiesiog važiuok — kelionės aptinkamos automatiškai. Arba išbandyk imituotą kelionę demo režime.',
     loadDemo: 'Įkelti demo keliones',
@@ -115,7 +115,7 @@ const lt: Translation = {
     previewNote: 'Preliminaru — galutinė XP patvirtinama po sinchronizavimo.',
   },
   profile: {
-    title: 'Profilis',
+    title: 'Profilis', eyebrow: 'Vairuotojas · garažas · privatumas',
     level: '{{level}} lygis',
     xpToNext: 'Iki {{next}} lygio liko {{xp}} XP',
     maxLevel: 'Pasiektas aukščiausias lygis',
@@ -140,6 +140,10 @@ const lt: Translation = {
   },
   radio: {
     title: 'Radijas',
+    subtitle: 'Spausk ir kalbėk · netoliese',
+    range: 'Atstumas', channel: 'Kanalas', ptt: 'Spausk ir kalbėk', inRange: 'ryšyje',
+    caption: 'Laikyk PTT ir kalbėk', settings: 'Radijo nustatymai',
+    lcdReady: 'PARUOŠTA', lcdListen: 'KLAUSAU', lcdNoSignal: 'NĖRA RYŠIO',
     ch_nearby: 'Netoliese', ch_friends: 'Draugai', ch_club: 'Klubas', ch_cruise: 'Kruizas', ch_private: 'Privatus',
     listening: 'Klausosi: {{count}}',
     holdToTalk: 'LAIKYK IR KALBĖK',
@@ -165,6 +169,7 @@ const lt: Translation = {
   },
   clubs: { title: 'Klubai', soonTitle: 'Klubai ir gyvas žemėlapis', soonBody: 'Junkis į klubus, matyk draugus realiu laiku (su saugiomis zonomis) ir varžykis sezonuose. 3 etape.' },
   home: {
+    hidden: 'Nematomas kitiems',
     goodMorning: 'Labas rytas', goodAfternoon: 'Laba diena', goodEvening: 'Labas vakaras',
     findDrive: 'Rask kitą kelionę', online: '{{count}} vairuoja dabar', hereNow: 'Tu čia',
     promoTag: 'SAVAITGALIO KRUIZAS', promoTitle: 'Važiuok daugiau, kartu', promoBody: 'Pakviesk vairuotojus šalia ir išriedėk saulėlydžio metu.', promoCta: 'Žiūrėti, kas prisijungęs',
@@ -184,7 +189,7 @@ const lt: Translation = {
     note: 'Jie mato tik kvietimą — niekada tikslios tavo vietos.',
   },
   discover: {
-    title: 'Atrask', subtitle: 'Automobiliai, klubai ir istorijos iš vairuotojų šalia',
+    title: 'Atrask', subtitle: 'Automobiliai, klubai ir istorijos iš vairuotojų šalia', eyebrow: 'Automobiliai · klubai · kelionės',
     tabCars: 'Auto', tabClubs: 'Klubai', tabStories: 'Istorijos', tabDrives: 'Važiavimai',
     showcase: 'Pasirodyk savo automobilį', addVehicle: 'Pridėk savo auto', stories: 'Istorijos', yourStory: 'Tavo istorija', postStory: 'Įkelti istoriją',
     storySoon: 'Foto istorijos atsiras kitame atnaujinime.', carsNear: 'Automobiliai šalia', viewAll: 'Rodyti visus',

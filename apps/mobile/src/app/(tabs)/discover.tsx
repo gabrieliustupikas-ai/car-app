@@ -2,9 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { withTabScene } from '@/components/layout/TabScene';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CarHero } from '@/components/community/CarHero';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
@@ -17,7 +19,7 @@ import type { Story, Vehicle } from '@/features/community/types';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/stores/session';
 import { useSettings } from '@/stores/settings';
-import { radius, shadow, space } from '@/theme/tokens';
+import { radius, space } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 type Tab = 'cars' | 'clubs' | 'drives';
@@ -43,7 +45,7 @@ function VehicleCard({ v }: { v: Vehicle }) {
   const { colors } = useTheme();
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={`${v.make} ${v.model}`} onPress={() => router.push(`/car/${v.id}` as never)}
-      style={[styles.carCard, shadow, { backgroundColor: colors.surface }]}>
+      style={[styles.carCard, { backgroundColor: colors.glass, borderColor: colors.glassBorder, borderWidth: StyleSheet.hairlineWidth }]}>
       <CarHero color={v.color} height={170} round={radius.lg - 6} />
       <View style={styles.carMeta}>
         <View style={{ flex: 1 }}>
@@ -60,7 +62,7 @@ function VehicleCard({ v }: { v: Vehicle }) {
   );
 }
 
-export default function Discover() {
+function Discover() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [tab, setTab] = useState<Tab>('cars');
@@ -73,12 +75,9 @@ export default function Discover() {
   const vehicles = useMemo(() => [...mine, ...DEMO_VEHICLES], [mine]);
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: colors.bg }]}>
+    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: 'transparent' }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View>
-          <AppText variant="h1" accessibilityRole="header">{t('discover.title')}</AppText>
-          <AppText color="textMuted">{t('discover.subtitle')}</AppText>
-        </View>
+        <ScreenHeader title={t('discover.title')} subtitle={t('discover.eyebrow')} />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.storyRow}>
           <StoryBubble add label={t('discover.yourStory')} color={colors.surfaceAlt} onPress={() => setPostOpen(true)} />
@@ -94,7 +93,7 @@ export default function Discover() {
         {tab === 'cars' && (
           <View style={{ gap: space.lg }}>
             <Button label={t('discover.showcase')} onPress={() => setFormOpen(true)} icon={<Ionicons name="add-circle" size={22} color={colors.onAccent} />} />
-            <AppText variant="h3">{t('discover.carsNear')}</AppText>
+            <AppText variant="eyebrow" color="textMuted">{t('discover.carsNear').toUpperCase()}</AppText>
             {vehicles.map((v) => <VehicleCard key={v.id} v={v} />)}
           </View>
         )}
@@ -221,3 +220,5 @@ const styles = StyleSheet.create({
   swatches: { flexDirection: 'row', gap: space.md, alignItems: 'center' },
   swatch: { width: 40, height: 40, borderRadius: 20 },
 });
+
+export default withTabScene(Discover);

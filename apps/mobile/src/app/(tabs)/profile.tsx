@@ -1,6 +1,7 @@
 import { rankLabel } from '@roadclub/core';
 import { File, Paths } from 'expo-file-system';
 import { useTranslation } from 'react-i18next';
+import { withTabScene } from '@/components/layout/TabScene';
 import { Alert, Share, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
@@ -26,7 +27,7 @@ import { DEFAULT_RETENTION_DAYS, useSettings } from '@/stores/settings';
 import { ensureTracking, stopTracking } from '@/tracking/controller';
 import { space } from '@/theme/tokens';
 
-export default function ProfileScreen() {
+function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const settings = useSettings();
   const session = useSession((s) => s.session);
@@ -70,7 +71,7 @@ export default function ProfileScreen() {
 
   const p = progress.data;
   return (
-    <Screen title={t('profile.title')}>
+    <Screen title={t('profile.title')} subtitle={t('profile.eyebrow')} overMap>
       {progress.isLoading ? (
         <GlassCard><View style={{ gap: space.md }}><Skeleton width="50%" height={28} /><Skeleton height={12} /><Skeleton height={60} /></View></GlassCard>
       ) : progress.isError || !p ? (
@@ -146,3 +147,5 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.sm },
 });
+
+export default withTabScene(ProfileScreen);

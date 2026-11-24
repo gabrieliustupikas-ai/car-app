@@ -81,7 +81,7 @@ const en = {
     layersSoon: 'Exploration fog, scenic roads and pins arrive in the next update.',
   },
   trips: {
-    title: 'Trips',
+    title: 'Trips', eyebrow: 'Every drive, logged',
     empty: 'No trips yet',
     emptyBody: 'Just drive — trips are detected automatically. Or try a simulated drive in demo mode.',
     loadDemo: 'Load demo drives',
@@ -113,7 +113,7 @@ const en = {
     previewNote: 'Preview — final XP confirmed after sync.',
   },
   profile: {
-    title: 'Profile',
+    title: 'Profile', eyebrow: 'Driver · garage · privacy',
     level: 'Level {{level}}',
     xpToNext: '{{xp}} XP to level {{next}}',
     maxLevel: 'Max level reached',
@@ -138,6 +138,10 @@ const en = {
   },
   radio: {
     title: 'Radio',
+    subtitle: 'Push to talk · nearby drivers',
+    range: 'Range', channel: 'Channel', ptt: 'Push to talk', inRange: 'in range',
+    caption: 'Hold PTT to transmit', settings: 'Radio settings',
+    lcdReady: 'READY', lcdListen: 'LISTEN', lcdNoSignal: 'NO SIGNAL',
     ch_nearby: 'Nearby', ch_friends: 'Friends', ch_club: 'Club', ch_cruise: 'Cruise', ch_private: 'Private',
     listening: '{{count}} listening',
     holdToTalk: 'HOLD TO TALK',
@@ -163,6 +167,7 @@ const en = {
   },
   clubs: { title: 'Clubs', soonTitle: 'Clubs & live map', soonBody: 'Join clubs, see friends live (with Safe Areas) and compete in seasons. Arriving in Phase 3.' },
   home: {
+    hidden: 'Hidden from others',
     goodMorning: 'Good morning', goodAfternoon: 'Good afternoon', goodEvening: 'Good evening',
     findDrive: 'Find your next drive', online: '{{count}} online driving', hereNow: 'You are here',
     promoTag: 'WEEKEND CRUISE', promoTitle: 'Drive more, together', promoBody: 'Invite drivers nearby and roll out at sunset.', promoCta: 'See who is online',
@@ -182,7 +187,7 @@ const en = {
     note: 'They only see your invite — never your exact location.',
   },
   discover: {
-    title: 'Discover', subtitle: 'Cars, clubs and stories from drivers near you',
+    title: 'Discover', subtitle: 'Cars, clubs and stories from drivers near you', eyebrow: 'Cars · clubs · drives',
     tabCars: 'Cars', tabClubs: 'Clubs', tabStories: 'Stories', tabDrives: 'Drives',
     showcase: 'Showcase your car', addVehicle: 'Add your car', stories: 'Stories', yourStory: 'Your story', postStory: 'Post a story',
     storySoon: 'Photo stories open in the next update.', carsNear: 'Cars near you', viewAll: 'View all',

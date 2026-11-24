@@ -7,6 +7,7 @@ import { AppText } from './AppText';
 interface Props {
   label: string;
   onPress?: () => void;
+  /** primary = solid red · secondary = silver outline · ghost = text only · danger = solid red-orange */
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'md' | 'lg' | 'driving';
   disabled?: boolean;
@@ -18,8 +19,8 @@ interface Props {
 
 export function Button({ label, onPress, variant = 'primary', size = 'lg', disabled, loading, icon, style, accessibilityHint }: Props) {
   const { colors } = useTheme();
-  const bg = { primary: colors.accent, secondary: colors.surfaceAlt, ghost: 'transparent', danger: colors.danger }[variant];
-  const fg = variant === 'primary' ? colors.onAccent : variant === 'danger' ? '#fff' : colors.text;
+  const bg = { primary: colors.accent, secondary: 'transparent', ghost: 'transparent', danger: colors.danger }[variant];
+  const fg = variant === 'primary' || variant === 'danger' ? '#FFFFFF' : variant === 'secondary' ? colors.accent2 : colors.text;
   const height = size === 'driving' ? touch.drivingTarget : size === 'lg' ? 56 : touch.min;
   return (
     <Pressable
@@ -31,17 +32,15 @@ export function Button({ label, onPress, variant = 'primary', size = 'lg', disab
       onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPress?.(); }}
       style={({ pressed }) => [
         styles.base,
-        { backgroundColor: bg, minHeight: height, opacity: disabled ? 0.45 : pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-        variant === 'ghost' && { borderWidth: 1, borderColor: colors.glassBorder },
-        variant === 'secondary' && { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.glassBorder },
-        variant === 'primary' && styles.glow,
+        { backgroundColor: bg, minHeight: height, opacity: disabled ? 0.45 : pressed ? 0.8 : 1 },
+        variant === 'secondary' && { borderWidth: 1.5, borderColor: colors.accent2 },
         style,
       ]}
     >
       {loading ? <ActivityIndicator color={fg} /> : (
         <View style={styles.row}>
           {icon}
-          <AppText variant={size === 'driving' ? 'h2' : 'h3'} style={{ color: fg }}>{label}</AppText>
+          <AppText variant="button" style={[{ color: fg }, size === 'driving' && { fontSize: 18 }]}>{label.toUpperCase()}</AppText>
         </View>
       )}
     </Pressable>
@@ -51,5 +50,4 @@ export function Button({ label, onPress, variant = 'primary', size = 'lg', disab
 const styles = StyleSheet.create({
   base: { borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.xl },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  glow: { shadowColor: '#F04349', shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
 });

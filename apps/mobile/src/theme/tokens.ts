@@ -1,30 +1,31 @@
 /**
- * Design tokens — "silver car on black" automotive palette: piano-black surfaces, brushed-silver
- * text and chrome, one racing-red accent. Change ACCENT to re-skin buttons, routes, XP and highlights.
+ * Design tokens — graphite + brushed silver + one racing red.
+ * Rules of thumb: red is for "live / act now" (PTT, active tab, recording, primary action) and nothing
+ * else; silver is for metal, outlines and secondary text; surfaces are dark graphite panels over the map.
  */
-export const ACCENT = '#F04349'; // signal red (matches the new light design)
-export const ACCENT_2 = '#C9CED6'; // brushed silver (gradients, chrome details)
+export const ACCENT = '#E3262C'; // racing red
+export const ACCENT_2 = '#C7CCD3'; // brushed silver
 
-/** Brushed-metal gradient stops used for chrome surfaces (logo, level badge, cards' top edge). */
-export const CHROME = ['#F4F6F8', '#B9BEC6', '#8A9099', '#D6DAE0'] as const;
+/** Brushed-metal gradient stops (radio faceplate, level badge, logo). */
+export const CHROME = ['#EEF0F3', '#B6BBC3', '#8C929B', '#D3D7DD'] as const;
 
 export const palette = {
   dark: {
-    bg: '#050506',
-    surface: '#0E0F11',
-    surfaceAlt: '#1A1C20',
-    glass: 'rgba(18, 19, 22, 0.78)',
-    glassBorder: 'rgba(214, 218, 224, 0.14)',
-    text: '#F2F3F5',
-    textMuted: '#A3A9B2',
-    textFaint: '#6B717A',
+    bg: '#0B0D10',
+    surface: '#14171B',
+    surfaceAlt: '#1E2227',
+    glass: 'rgba(16, 18, 22, 0.86)',
+    glassBorder: 'rgba(199, 204, 211, 0.14)',
+    text: '#F1F3F5',
+    textMuted: '#A9AFB8',
+    textFaint: '#6E747D',
     accent: ACCENT,
     accent2: ACCENT_2,
     onAccent: '#FFFFFF',
-    success: '#34C77B',
+    success: '#3CCB7F',
     warning: '#F2B33D',
-    danger: '#FF3B30',
-    route: '#FF4B50',
+    danger: '#FF453A',
+    route: '#FF3B3F',
     overlay: 'rgba(0,0,0,0.6)',
   },
   light: {
@@ -55,6 +56,7 @@ export const radius = { sm: 12, md: 18, lg: 26, xl: 32, pill: 999 } as const;
 export const shadow = { shadowColor: '#1B2030', shadowOpacity: 0.1, shadowRadius: 22, shadowOffset: { width: 0, height: 8 }, elevation: 6 } as const;
 export const type = {
   // large, legible type — scales with the OS font size (allowFontScaling is on everywhere)
+  display: { fontSize: 40, fontWeight: '900' as const, letterSpacing: -1 },
   hero: { fontSize: 46, fontWeight: '800' as const, letterSpacing: -1.5 },
   h1: { fontSize: 30, fontWeight: '800' as const, letterSpacing: -0.5 },
   h2: { fontSize: 22, fontWeight: '700' as const },
@@ -62,6 +64,10 @@ export const type = {
   body: { fontSize: 16, fontWeight: '500' as const },
   small: { fontSize: 13, fontWeight: '600' as const, letterSpacing: 0.2 },
   label: { fontSize: 11, fontWeight: '700' as const, letterSpacing: 1.6 },
+  /** tracked uppercase subtitle under big titles and section headings */
+  eyebrow: { fontSize: 12, fontWeight: '800' as const, letterSpacing: 2.4 },
+  /** button labels: uppercase, tracked */
+  button: { fontSize: 14, fontWeight: '800' as const, letterSpacing: 1.6 },
   mono: { fontSize: 16, fontWeight: '700' as const, fontVariant: ['tabular-nums' as const] },
 };
 /** Minimum touch target. Driving-mode controls use `drivingTarget`. */

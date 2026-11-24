@@ -2,36 +2,46 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { radius, shadow, space } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 import { AppText } from '@/components/ui/AppText';
 
-/** The subset of react-navigation's bottom-tab props this bar uses. */
+type TabPressEvent = { type: 'tabPress'; target: string; canPreventDefault: true };
+
+/**
+ * The subset of bottom-tab props this bar uses. Expo Router 58 passes `emitter` + `navigateToTab`
+ * (React Navigation 7 style passes `navigation`); both are supported.
+ */
 export interface BottomTabBarProps {
   state: { index: number; routes: { key: string; name: string; params?: object }[] };
   descriptors: Record<string, { options: { title?: string } } | undefined>;
-  navigation: {
-    emit: (e: { type: 'tabPress'; target: string; canPreventDefault: true }) => { defaultPrevented: boolean };
+  emitter?: { emit: (e: TabPressEvent) => { defaultPrevented: boolean } };
+  navigateToTab?: (routeKey: string) => void;
+  navigation?: {
+    emit: (e: TabPressEvent) => { defaultPrevented: boolean };
     navigate: (name: string, params?: object) => void;
   };
 }
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 const ICONS: Record<string, [IconName, IconName]> = {
-  index: ['home', 'home-outline'],
+  index: ['map', 'map-outline'],
   discover: ['compass', 'compass-outline'],
   trips: ['git-branch', 'git-branch-outline'],
   radio: ['radio', 'radio-outline'],
   profile: ['person', 'person-outline'],
 };
 
-/** Floating pill tab bar: the active tab expands into a red pill with its label (see design reference). */
-export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
-  const { colors, scheme } = useTheme();
+/**
+ * Floating dock: graphite capsule, icon over a tracked uppercase label. The active tab lights its
+ * icon red with a short red indicator above it — like a lit switch on a dashboard.
+ */
+export function FloatingTabBar({ state, descriptors, emitter, navigateToTab, navigation }: BottomTabBarProps) {
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const routes = state.routes.filter((r) => ICONS[r.name]);
   return (
-    <View pointerEvents="box-none" style={[styles.outer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <View style={[styles.bar, shadow, { backgroundColor: scheme === 'light' ? '#FFFFFF' : colors.surfaceAlt, borderColor: colors.glassBorder }]}>
+    <View pointerEvents="box-none" style={[styles.outer, { paddingBottom: Math.max(insets.bottom - 6, 10) }]}>
+      <View style={[styles.bar, { backgroundColor: 'rgba(14,16,19,0.96)', borderColor: colors.glassBorder }]}>
         {routes.map((route) => {
           const focused = state.routes[state.index]?.key === route.key;
           const label = descriptors[route.key]?.options.title ?? route.name;
@@ -44,13 +54,17 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
               accessibilityState={{ selected: focused }}
               onPress={() => {
                 void Haptics.selectionAsync();
-                const e = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                if (!focused && !e.defaultPrevented) navigation.navigate(route.name, route.params);
+                const ev: TabPressEvent = { type: 'tabPress', target: route.key, canPreventDefault: true };
+                const e = (emitter ?? navigation)?.emit(ev);
+                if (focused || e?.defaultPrevented) return;
+                if (navigateToTab) navigateToTab(route.key);
+                else navigation?.navigate(route.name, route.params);
               }}
-              style={[styles.item, focused && { backgroundColor: colors.accent, paddingHorizontal: space.lg }]}
+              style={styles.item}
             >
-              <Ionicons name={focused ? on : off} size={22} color={focused ? colors.onAccent : colors.textMuted} />
-              {focused ? <AppText variant="small" style={{ color: colors.onAccent }} numberOfLines={1}>{label}</AppText> : null}
+              <View style={[styles.indicator, { backgroundColor: focused ? colors.accent : 'transparent' }]} />
+              <Ionicons name={focused ? on : off} size={23} color={focused ? colors.accent : colors.accent2} />
+              <AppText style={[styles.label, { color: focused ? colors.text : colors.textMuted }]} numberOfLines={1}>{label.toUpperCase()}</AppText>
             </Pressable>
           );
         })}
@@ -60,7 +74,9 @@ export function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarP
 }
 
 const styles = StyleSheet.create({
-  outer: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingHorizontal: space.lg },
-  bar: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 6, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth },
-  item: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 48, minWidth: 48, paddingHorizontal: 13, borderRadius: radius.pill, justifyContent: 'center' },
+  outer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.md },
+  bar: { flexDirection: 'row', alignItems: 'stretch', borderRadius: 30, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 6, paddingBottom: 8 },
+  item: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', minHeight: 62, gap: 4 },
+  indicator: { width: 22, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, marginBottom: 6 },
+  label: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
 });

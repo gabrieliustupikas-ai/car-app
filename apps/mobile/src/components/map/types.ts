@@ -10,6 +10,10 @@ export interface RoadMapProps {
   compact?: boolean;
   /** web: keep the map attribution clear of bottom overlays (px) */
   controlsBottomInset?: number;
+  /** web: animate camera moves when `bounds` changes (backdrop map) */
+  animateBounds?: boolean;
+  /** padding (px) used when fitting `bounds` */
+  boundsPadding?: { top: number; bottom: number; left: number; right: number };
 }
 
 export interface MapDriver {

@@ -10,6 +10,7 @@ import { StyleSheet, View } from 'react-native';
 import { useTheme } from '@/theme/useTheme';
 import { buildMapStyle } from './mapStyle';
 import type { MapDriver, MapPlace, MapReport, RoadMapProps } from './types';
+import { circlePolygon } from './geo';
 
 export type { MapDriver, MapPlace, MapReport } from './types';
 
@@ -40,7 +41,7 @@ function carImage(fill: string, stroke: string) {
 }
 
 export const RoadMap = forwardRef<unknown, PropsWithChildren<RoadMapProps>>(function RoadMap(
-  { children, bounds, followCoord, interactive = true, pitch = 50, controlsBottomInset = 0 }, _ref,
+  { children, bounds, followCoord, interactive = true, pitch = 50, controlsBottomInset = 0, animateBounds = false, boundsPadding }, _ref,
 ) {
   const host = useRef<unknown>(null);
   const { scheme } = useTheme();
@@ -85,8 +86,9 @@ export const RoadMap = forwardRef<unknown, PropsWithChildren<RoadMapProps>>(func
   }, [map, scheme]);
 
   useEffect(() => {
-    if (map && bounds) map.fitBounds([bounds.sw, bounds.ne], { padding: { top: 70, bottom: 40, left: 40, right: 40 }, duration: 0, pitch: 0, bearing: 0 });
-  }, [map, bounds]);
+    if (map && bounds) map.fitBounds([bounds.sw, bounds.ne], { padding: boundsPadding ?? { top: 70, bottom: 40, left: 40, right: 40 }, duration: animateBounds ? 700 : 0, pitch: 0, bearing: 0 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, bounds, animateBounds]);
 
   const fLng = followCoord?.[0], fLat = followCoord?.[1];
   useEffect(() => {
@@ -243,5 +245,18 @@ export function UserPuck({ coord }: { coord: [number, number] | null }) {
     { id: 'rc-me-dot', type: 'circle', source: 'rc-me',
       paint: { 'circle-radius': 8, 'circle-color': colors.accent, 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' } },
   ], colors.accent);
+  return null;
+}
+
+/** Radio reach: a soft red disc with a silver rim around `center`. */
+export function RangeRing({ center, radiusM }: { center: [number, number]; radiusM: number }) {
+  const { colors } = useTheme();
+  const data = useMemo<GeoJSON.Feature>(() => ({
+    type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [circlePolygon(center, radiusM)] },
+  }), [center, radiusM]);
+  useGeoJsonLayers('rc-range', data, [
+    { id: 'rc-range-fill', type: 'fill', source: 'rc-range', paint: { 'fill-color': colors.accent, 'fill-opacity': 0.07 } },
+    { id: 'rc-range-rim', type: 'line', source: 'rc-range', paint: { 'line-color': colors.accent2, 'line-width': 1.6, 'line-opacity': 0.75 } },
+  ], `${colors.accent}-${colors.accent2}`);
   return null;
 }

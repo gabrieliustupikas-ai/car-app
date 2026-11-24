@@ -7,6 +7,7 @@ import { hasMapbox } from '@/config/env';
 import { KLAIPEDA_CENTER } from '@roadclub/core';
 import { MAP_STYLE, Mapbox } from '@/lib/mapbox';
 import type { MapDriver, MapPlace, MapReport, RoadMapProps } from './types';
+import { circlePolygon } from './geo';
 import { useTheme } from '@/theme/useTheme';
 import { space } from '@/theme/tokens';
 import { AppText } from '@/components/ui/AppText';
@@ -22,7 +23,7 @@ type Props = RoadMapProps;
  * Mapbox token is configured so the rest of the app (tracking, demo) still works.
  */
 export const RoadMap = forwardRef<CameraRef, PropsWithChildren<Props>>(function RoadMap(
-  { children, follow = false, followCoord, interactive = true, bounds, pitch = 45, showUser = true, compact = false }, cameraRef,
+  { children, follow = false, followCoord, interactive = true, bounds, pitch = 45, showUser = true, compact = false, animateBounds = false, boundsPadding }, cameraRef,
 ) {
   const { scheme, colors } = useTheme();
   const { t } = useTranslation();
@@ -74,7 +75,7 @@ export const RoadMap = forwardRef<CameraRef, PropsWithChildren<Props>>(function 
         followPitch={pitch}
         defaultSettings={{ centerCoordinate: KLAIPEDA_CENTER, zoomLevel: 12.4, pitch: 45, heading: -14 }}
         {...(followCoord ? { centerCoordinate: followCoord, zoomLevel: 14.6, pitch: 55, animationDuration: 900 } : {})}
-        {...(bounds ? { bounds: { ...bounds, paddingTop: 80, paddingBottom: 80, paddingLeft: 40, paddingRight: 40 }, animationDuration: 0 } : {})}
+        {...(bounds ? { bounds: { ...bounds, paddingTop: boundsPadding?.top ?? 80, paddingBottom: boundsPadding?.bottom ?? 80, paddingLeft: boundsPadding?.left ?? 40, paddingRight: boundsPadding?.right ?? 40 }, animationDuration: animateBounds ? 700 : 0 } : {})}
       />
       {showUser && <Mapbox.LocationPuck puckBearing="course" puckBearingEnabled pulsing={{ isEnabled: true, color: colors.accent }} />}
       {children}
@@ -163,3 +164,15 @@ export function UserPuck({ coord }: { coord: [number, number] | null }) {
 const styles = StyleSheet.create({
   fallback: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.sm, padding: space.xxl },
 });
+
+/** Radio reach: a soft red disc with a silver rim around `center`. */
+export function RangeRing({ center, radiusM }: { center: [number, number]; radiusM: number }) {
+  const { colors } = useTheme();
+  if (!hasMapbox) return null;
+  return (
+    <Mapbox.ShapeSource id="rc-range" shape={{ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [circlePolygon(center, radiusM)] } }}>
+      <Mapbox.FillLayer id="rc-range-fill" style={{ fillColor: colors.accent, fillOpacity: 0.07, fillEmissiveStrength: 1 }} />
+      <Mapbox.LineLayer id="rc-range-rim" style={{ lineColor: colors.accent2, lineWidth: 1.6, lineOpacity: 0.75, lineEmissiveStrength: 1 }} />
+    </Mapbox.ShapeSource>
+  );
+}

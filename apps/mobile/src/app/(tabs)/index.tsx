@@ -4,9 +4,12 @@ import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { withTabScene } from '@/components/layout/TabScene';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { InviteSheet } from '@/components/community/InviteSheet';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { REPORT_META, ReportSheet } from '@/components/community/ReportSheet';
 import { HoldButton } from '@/components/HoldButton';
 import { DriversLayer, PlacesLayer, ReportsLayer, RoadMap, RouteLine, UserPuck } from '@/components/map/RoadMap';
@@ -27,7 +30,7 @@ import { useSettings } from '@/stores/settings';
 import { useTracking } from '@/stores/tracking';
 import { applyProfile, requestLocationPermissions } from '@/tracking/controller';
 import { startManualTrip, stopTrip } from '@/tracking/recorder';
-import { radius, shadow, space, touch } from '@/theme/tokens';
+import { radius, space, touch } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
 function useElapsed(startedAt: number | null) {
@@ -50,19 +53,19 @@ function useNow(ms = 30_000) {
   return now;
 }
 
-function RoundButton({ icon, label, onPress, active, tint }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; onPress: () => void; active?: boolean; tint?: string }) {
+function RoundButton({ icon, label, onPress, active, iconColor }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; onPress: () => void; active?: boolean; iconColor?: string }) {
   const { colors } = useTheme();
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
-      style={[styles.round, shadow, { backgroundColor: active ? colors.accent : tint ?? colors.surface, borderColor: colors.glassBorder }]}>
-      <Ionicons name={icon} size={22} color={active || tint ? colors.onAccent : colors.text} />
+      style={[styles.round, { backgroundColor: active ? colors.accent : 'rgba(14,16,19,0.92)', borderColor: colors.glassBorder }]}>
+      <Ionicons name={icon} size={22} color={active ? colors.onAccent : iconColor ?? colors.accent2} />
     </Pressable>
   );
 }
 
 const CAR_DOT: Record<string, string> = { red: '#F04349', silver: '#C9CED6', black: '#16181B' };
 
-export default function MapHome() {
+function MapHome() {
   const { t, i18n } = useTranslation();
   const { colors } = useTheme();
   const phase = useTracking((s) => s.phase);
@@ -105,8 +108,6 @@ export default function MapHome() {
   const picked = selected?.kind === 'report' ? reports.find((r) => r.id === selected.id) : undefined;
   const accepted = invites.find((i) => i.status === 'accepted' && now - i.createdAt < 120_000 && i.id !== dismissedInvite);
   const tabBarHidden = recording && (lastFix?.speed ?? 0) > 3;
-  const hour = new Date(now).getHours();
-  const greeting = hour < 12 ? t('home.goodMorning') : hour < 18 ? t('home.goodAfternoon') : t('home.goodEvening');
 
   /** Where "here" is: simulated/last GPS fix, the demo city centre in demo mode, otherwise a fresh GPS reading (null if unavailable). */
   const getHere = async (): Promise<[number, number] | null> => {
@@ -152,32 +153,26 @@ export default function MapHome() {
         {layers.drivers && <DriversLayer drivers={drivers} onPress={(id) => setSelected({ kind: 'driver', id })} />}
         <UserPuck coord={simCoord} />
       </RoadMap>
+      <LinearGradient pointerEvents="none" colors={['rgba(11,13,16,0.95)', 'rgba(11,13,16,0.55)', 'rgba(11,13,16,0)']} style={styles.topScrim} />
 
       <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
-        <GlassCard style={styles.hero}>
-          <View style={styles.heroRow}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <AppText variant="small" color="textMuted">{greeting}</AppText>
-              <AppText variant="h1" accessibilityRole="header" style={{ lineHeight: 34 }}>{t('home.findDrive')}</AppText>
-            </View>
-            <View style={[styles.dot, { backgroundColor: phaseColor }]} accessibilityLabel={phaseLabel} />
-          </View>
+        <ScreenHeader title={t('tabs.map')} subtitle={simulating ? t('map.simulating', { route: simulating }) : phaseLabel} />
+        <View style={styles.statusRow}>
           <Pressable accessibilityRole="button" accessibilityLabel={t('home.online', { count: drivers.length })} onPress={() => setOnlineOpen(true)}
-            style={[styles.onlinePill, { backgroundColor: colors.surfaceAlt }]}>
-            <View style={[styles.liveDot, { backgroundColor: colors.success }]} />
-            <AppText variant="small" style={{ flex: 1 }}>{t('home.online', { count: drivers.length })}</AppText>
-            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            style={[styles.onlinePill, { backgroundColor: colors.glass, borderColor: colors.glassBorder }]}>
+            <View style={[styles.liveDot, { backgroundColor: phaseColor === colors.textFaint ? colors.success : phaseColor }]} />
+            <AppText variant="eyebrow">{t('home.online', { count: drivers.length }).toUpperCase()}</AppText>
+            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
           </Pressable>
-          <AppText variant="small" color="textMuted">
-            {simulating ? t('map.simulating', { route: simulating }) : phaseLabel}{' · '}
-            {demoMode ? t('map.demoProfile') : `${t('map.autoDetect')}: ${autoDetect ? t('common.on') : t('common.off')}`}
-            {' · '}<Ionicons name="eye-off-outline" size={12} /> {t('map.visibilityOff')}
-          </AppText>
-        </GlassCard>
+          <View style={[styles.onlinePill, { backgroundColor: colors.glass, borderColor: colors.glassBorder }]}>
+            <Ionicons name="eye-off-outline" size={14} color={colors.accent2} />
+            <AppText variant="eyebrow" color="textMuted">{t('home.hidden').toUpperCase()}</AppText>
+          </View>
+        </View>
         {!recording && (
           <View style={styles.sideButtons}>
             <RoundButton icon="layers-outline" label={t('map.layers')} active={showLayers} onPress={() => setShowLayers((v) => !v)} />
-            <RoundButton icon="shield" label={t('report.open')} tint="#2F6BFF" onPress={() => setReportOpen(true)} />
+            <RoundButton icon="shield-outline" label={t('report.open')} onPress={() => setReportOpen(true)} iconColor={colors.accent} />
           </View>
         )}
         {showLayers && !recording && (
@@ -331,10 +326,9 @@ export default function MapHome() {
 
 const styles = StyleSheet.create({
   top: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: space.lg, gap: space.md },
-  hero: { marginTop: space.sm, gap: space.sm, padding: space.lg },
-  heroRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
-  dot: { width: 12, height: 12, borderRadius: 6, marginTop: 6 },
-  onlinePill: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderRadius: radius.pill, paddingHorizontal: space.md, minHeight: 44 },
+  topScrim: { position: 'absolute', top: 0, left: 0, right: 0, height: 230 },
+  statusRow: { flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' },
+  onlinePill: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderRadius: radius.pill, paddingHorizontal: space.md, minHeight: 40, borderWidth: StyleSheet.hairlineWidth },
   liveDot: { width: 9, height: 9, borderRadius: 5 },
   sideButtons: { alignSelf: 'flex-end', gap: space.sm },
   layersPanel: { alignSelf: 'flex-end', width: 280 },
@@ -351,3 +345,5 @@ const styles = StyleSheet.create({
   startIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   go: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
 });
+
+export default withTabScene(MapHome);

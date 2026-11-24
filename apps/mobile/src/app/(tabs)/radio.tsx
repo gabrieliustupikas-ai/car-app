@@ -2,12 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { withTabScene } from '@/components/layout/TabScene';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { PttButton } from '@/components/PttButton';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { RadioUnit } from '@/components/radio/RadioUnit';
 import { AppText } from '@/components/ui/AppText';
-import { Chip } from '@/components/ui/Chip';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { Sheet } from '@/components/ui/Sheet';
 import { SettingRow } from '@/components/ui/SettingRow';
 import { EmptyState } from '@/components/ui/States';
 import { isWebPreview } from '@/config/env';
@@ -31,13 +33,14 @@ function useNow(active: boolean) {
   return now;
 }
 
-export default function RadioScreen() {
+function RadioScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const focused = useIsFocused();
   const demo = useSettings((s) => s.demoMode) || isWebPreview;
   const r = useRadio();
   const [txAt, setTxAt] = useState<number | null>(null);
+  const [picker, setPicker] = useState(false);
   const now = useNow(r.status === 'transmitting');
   const members = channelMembers(r.channel, r.radiusKm); // cheap: 8 demo drivers
   const live = r.channel === 'nearby' || r.channel === 'friends' || r.channel === 'club';
@@ -70,125 +73,119 @@ export default function RadioScreen() {
 
   const elapsed = txAt ? Math.min(MAX_TRANSMIT_S, (now - txAt) / 1000) : 0;
   const channelTitle = r.channel === 'nearby' ? `${t('radio.ch_nearby')} · ${r.radiusKm} km` : t(`radio.ch_${r.channel}`);
-  const pttLabel = r.status === 'transmitting' ? t('radio.onAir') : r.listenOnly ? t('radio.listenOnly').toUpperCase() : t('radio.holdToTalk');
-  const pttSub = r.status === 'transmitting' ? `${elapsed.toFixed(1)} / ${MAX_TRANSMIT_S} s` : Platform.OS === 'web' ? t('radio.spaceHint') : undefined;
+
+  const display = !live ? t('radio.lcdNoSignal')
+    : r.status === 'transmitting' ? `TX ${elapsed.toFixed(1).padStart(4, '0')}`
+    : r.status === 'receiving' && r.speaker ? `RX ${r.speaker.name.toUpperCase()}`
+    : r.listenOnly ? t('radio.lcdListen') : t('radio.lcdReady');
 
   return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: 'transparent' }}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <AppText variant="h1" accessibilityRole="header">{t('radio.title')}</AppText>
-            <View style={styles.liveRow}>
-              <View style={[styles.liveDot, { backgroundColor: live ? colors.accent : colors.textFaint }]} />
-              <AppText variant="small" color="textMuted">{channelTitle} · {t('radio.listening', { count: members.length + 1 })}</AppText>
-            </View>
-          </View>
-          <AppText variant="label" color="textFaint">PTT</AppText>
+        <ScreenHeader title={t('radio.title')} subtitle={t('radio.subtitle')} />
+
+        <View style={[styles.strip, { backgroundColor: colors.glass, borderColor: colors.glassBorder }]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${t('radio.range')} ${r.radiusKm} km`} style={styles.stripItem}
+            onPress={() => r.set({ radiusKm: RADII[(RADII.indexOf(r.radiusKm) + 1) % RADII.length]! })}>
+            <Ionicons name="radio-outline" size={18} color={colors.accent} />
+            <AppText variant="eyebrow" color="textMuted">{t('radio.range').toUpperCase()}</AppText>
+            <AppText variant="eyebrow">{r.channel === 'nearby' ? `${r.radiusKm} KM` : '—'}</AppText>
+          </Pressable>
+          <View style={[styles.stripDivider, { backgroundColor: colors.glassBorder }]} />
+          <Pressable accessibilityRole="button" accessibilityLabel={`${t('radio.channel')}: ${channelTitle}`} style={styles.stripItem} onPress={() => setPicker(true)}>
+            <Ionicons name="people-outline" size={18} color={colors.accent2} />
+            <AppText variant="eyebrow" numberOfLines={1} style={{ flexShrink: 1 }}>{t(`radio.ch_${r.channel}`).toUpperCase()}</AppText>
+            <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+          </Pressable>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {CHANNELS.map((c) => <Chip key={c} label={t(`radio.ch_${c}`)} selected={r.channel === c} onPress={() => r.set({ channel: c })} />)}
-        </ScrollView>
-        {r.channel === 'nearby' && (
-          <View style={styles.chips}>
-            {RADII.map((k) => <Chip key={k} label={`${k} km`} selected={r.radiusKm === k} onPress={() => r.set({ radiusKm: k })} />)}
-          </View>
-        )}
+        {/* leave room so the range ring on the map shows above the unit */}
+        <View style={{ height: 150 }} />
 
-        {!live ? (
-          <EmptyState icon={r.channel === 'cruise' ? 'car-sport-outline' : 'lock-closed-outline'}
-            title={t(`radio.empty_${r.channel}`)} body={t('radio.emptyBody')} />
-        ) : (
-          <>
-            <GlassCard>
-              {r.status === 'receiving' && r.speaker ? (
-                <View style={styles.speaker} accessibilityLiveRegion="polite">
-                  <Ionicons name="volume-high" size={22} color={colors.accent2} />
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="h3">{r.speaker.name}</AppText>
-                    <AppText variant="small" color="textMuted">{r.speaker.car}</AppText>
-                  </View>
-                  <Bars level={r.level} color={colors.accent2} />
-                </View>
-              ) : r.status === 'transmitting' ? (
-                <View style={styles.speaker}>
-                  <View style={[styles.liveDot, { backgroundColor: colors.accent, width: 12, height: 12, borderRadius: 6 }]} />
-                  <AppText variant="h3" style={{ flex: 1 }}>{t('radio.youAreLive', { channel: channelTitle })}</AppText>
-                  <Bars level={r.level} color={colors.accent} />
-                </View>
-              ) : (
-                <View style={styles.speaker}>
-                  <Ionicons name="radio-outline" size={22} color={colors.textMuted} />
-                  <AppText color="textMuted" style={{ flex: 1 }}>{t('radio.channelClear')}</AppText>
+        <RadioUnit
+          status={r.status}
+          channel={r.channel}
+          channelLabel={t(`radio.ch_${r.channel}`)}
+          radiusKm={r.radiusKm}
+          level={r.level}
+          inRange={live ? members.length : 0}
+          display={display}
+          listenOnly={r.listenOnly || !live}
+          labels={{ range: t('radio.range'), ptt: t('radio.ptt'), inRange: t('radio.inRange'),
+            presets: { nearby: t('radio.ch_nearby'), friends: t('radio.ch_friends'), club: t('radio.ch_club') } }}
+          onRadius={(km) => r.set({ radiusKm: km })}
+          onChannel={(c) => r.set({ channel: c })}
+          onPttIn={() => void down()}
+          onPttOut={up}
+        />
+        <View style={{ alignItems: 'center', gap: 2 }}>
+          <AppText variant="eyebrow">{t('radio.caption').toUpperCase()}</AppText>
+          <AppText variant="small" color="textMuted">{Platform.OS === 'web' ? t('radio.spaceHint') : t('radio.listening', { count: members.length + 1 })}</AppText>
+        </View>
+
+        {!live && <EmptyState icon={r.channel === 'cruise' ? 'car-sport-outline' : 'lock-closed-outline'} title={t(`radio.empty_${r.channel}`)} body={t('radio.emptyBody')} />}
+
+        <AppText variant="eyebrow" color="textMuted" style={{ marginTop: space.md }}>{t('radio.recent').toUpperCase()}</AppText>
+        {r.log.length === 0 ? <AppText color="textFaint">{t('radio.noMessages')}</AppText> : r.log.slice(0, 8).map((m) => (
+          <GlassCard key={m.id}>
+            <View style={styles.msgRow}>
+              <View style={[styles.msgMark, { backgroundColor: m.fromId === 'me' ? colors.accent : colors.accent2 }]} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <AppText variant="small" color={m.fromId === 'me' ? 'accent' : 'text'}>
+                  {m.fromName}{m.car ? ` · ${m.car}` : ''} · {m.durationS.toFixed(1)} s
+                </AppText>
+                <AppText color="textMuted">{m.text ?? t('radio.voiceOnly')}</AppText>
+              </View>
+              {m.fromId !== 'me' && (
+                <View style={styles.modRow}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={r.muted.includes(m.fromId) ? t('radio.unmute') : t('radio.mute')} hitSlop={10}
+                    onPress={() => r.toggleMute(m.fromId)}>
+                    <Ionicons name={r.muted.includes(m.fromId) ? 'volume-mute' : 'volume-mute-outline'} size={20} color={r.muted.includes(m.fromId) ? colors.accent : colors.textMuted} />
+                  </Pressable>
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('radio.report')} hitSlop={10}
+                    onPress={() => Alert.alert(t('radio.report'), t('radio.reported', { name: m.fromName }))}>
+                    <Ionicons name="flag-outline" size={20} color={colors.textMuted} />
+                  </Pressable>
                 </View>
               )}
-            </GlassCard>
+            </View>
+          </GlassCard>
+        ))}
 
-            <PttButton
-              active={r.status === 'transmitting'}
-              receiving={r.status === 'receiving'}
-              level={r.level}
-              disabled={r.listenOnly}
-              label={pttLabel}
-              sublabel={pttSub}
-              onPressIn={() => void down()}
-              onPressOut={up}
-            />
-
-            <GlassCard>
-              <SettingRow label={t('radio.listenOnly')} hint={t('radio.listenOnlyHint')} value={r.listenOnly} onValueChange={(v) => r.set({ listenOnly: v })} />
-              <SettingRow label={t('radio.duck')} hint={t('radio.duckHint')} value={r.duckMusic} onValueChange={(v) => r.set({ duckMusic: v })} />
-              <SettingRow label={t('radio.readAloud')} value={r.readAloud} onValueChange={(v) => r.set({ readAloud: v })} />
-            </GlassCard>
-
-            <AppText variant="label" color="textMuted">{t('radio.recent').toUpperCase()}</AppText>
-            {r.log.length === 0 ? <AppText color="textFaint">{t('radio.noMessages')}</AppText> : r.log.map((m) => (
-              <GlassCard key={m.id}>
-                <View style={styles.msgRow}>
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <AppText variant="small" color={m.fromId === 'me' ? 'accent' : 'text'}>
-                      {m.fromName}{m.car ? ` · ${m.car}` : ''} · {m.durationS.toFixed(1)} s
-                    </AppText>
-                    <AppText color="textMuted">{m.text ?? t('radio.voiceOnly')}</AppText>
-                  </View>
-                  {m.fromId !== 'me' && (
-                    <View style={styles.modRow}>
-                      <Pressable accessibilityRole="button" accessibilityLabel={r.muted.includes(m.fromId) ? t('radio.unmute') : t('radio.mute')} hitSlop={10}
-                        onPress={() => r.toggleMute(m.fromId)}>
-                        <Ionicons name={r.muted.includes(m.fromId) ? 'volume-mute' : 'volume-mute-outline'} size={20} color={r.muted.includes(m.fromId) ? colors.accent : colors.textMuted} />
-                      </Pressable>
-                      <Pressable accessibilityRole="button" accessibilityLabel={t('radio.report')} hitSlop={10}
-                        onPress={() => Alert.alert(t('radio.report'), t('radio.reported', { name: m.fromName }))}>
-                        <Ionicons name="flag-outline" size={20} color={colors.textMuted} />
-                      </Pressable>
-                    </View>
-                  )}
-                </View>
-              </GlassCard>
-            ))}
-          </>
-        )}
+        <AppText variant="eyebrow" color="textMuted" style={{ marginTop: space.md }}>{t('radio.settings').toUpperCase()}</AppText>
+        <GlassCard>
+          <SettingRow label={t('radio.listenOnly')} hint={t('radio.listenOnlyHint')} value={r.listenOnly} onValueChange={(v) => r.set({ listenOnly: v })} />
+          <SettingRow label={t('radio.duck')} hint={t('radio.duckHint')} value={r.duckMusic} onValueChange={(v) => r.set({ duckMusic: v })} />
+          <SettingRow label={t('radio.readAloud')} value={r.readAloud} onValueChange={(v) => r.set({ readAloud: v })} />
+        </GlassCard>
         <View style={styles.note}>
           <Ionicons name="shield-checkmark-outline" size={16} color={colors.textFaint} />
           <AppText variant="small" color="textFaint" style={{ flex: 1 }}>{demo ? t('radio.demoNote') : t('radio.privacyNote')}</AppText>
         </View>
       </ScrollView>
+
+      <Sheet visible={picker} onClose={() => setPicker(false)}>
+        <AppText variant="eyebrow" color="textMuted">{t('radio.channel').toUpperCase()}</AppText>
+        {CHANNELS.map((c) => (
+          <Pressable key={c} accessibilityRole="button" accessibilityState={{ selected: r.channel === c }}
+            onPress={() => { r.set({ channel: c }); setPicker(false); }}
+            style={[styles.pickRow, { borderColor: r.channel === c ? colors.accent : colors.glassBorder }]}>
+            <AppText variant="h3" style={{ flex: 1 }}>{t(`radio.ch_${c}`)}</AppText>
+            {r.channel === c && <Ionicons name="checkmark" size={20} color={colors.accent} />}
+          </Pressable>
+        ))}
+      </Sheet>
     </SafeAreaView>
   );
 }
 
-function Bars({ level, color }: { level: number; color: string }) {
-  const heights = [0.5, 0.85, 1, 0.7, 0.45];
-  return (
-    <View style={styles.bars} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {heights.map((h, i) => <View key={i} style={{ width: 4, borderRadius: 2, backgroundColor: color, height: 4 + 22 * h * Math.max(0.1, level) }} />)}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  content: { padding: space.lg, gap: space.lg, paddingBottom: space.xxl * 2 },
+  content: { padding: space.lg, gap: space.lg, paddingBottom: 140 },
+  strip: { flexDirection: 'row', alignItems: 'center', borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, minHeight: 54, paddingHorizontal: space.sm },
+  stripItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, paddingHorizontal: space.sm },
+  stripDivider: { width: StyleSheet.hairlineWidth, height: 26 },
+  msgMark: { width: 3, alignSelf: 'stretch', borderRadius: 2 },
+  pickRow: { flexDirection: 'row', alignItems: 'center', minHeight: 54, paddingHorizontal: space.lg, borderRadius: 14, borderWidth: 1.5 },
   header: { flexDirection: 'row', alignItems: 'flex-start', marginTop: space.sm },
   liveRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginTop: 4 },
   liveDot: { width: 8, height: 8, borderRadius: 4 },
@@ -199,3 +196,5 @@ const styles = StyleSheet.create({
   modRow: { flexDirection: 'row', gap: space.lg },
   note: { flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' },
 });
+
+export default withTabScene(RadioScreen);
